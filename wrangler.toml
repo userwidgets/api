@@ -29,9 +29,11 @@ durable_objects.bindings = [
 [env.miniflare]
 workers_dev = true
 # account_id = "4bcc6b2f51b1ed579925a357e75eb6b8"
-vars = { issuer = "miniflare", adminSecret = "secret" }
 durable_objects.bindings = [
+	{ name = "userNamespace", class_name = "DurableUser" },
+	{ name = "applicationNamespace", class_name = "DurableApplication" },
 ]
+vars = { hashSecret = "hashing", privateSecret = "", adminSecret = "secret", issuer = "miniflare" }
 
 [miniflare]
 durable_objects_persist = "./.miniflare/durable-objects/"

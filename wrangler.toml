@@ -1,0 +1,38 @@
+compatibility_date = "2022-06-27"
+type = "javascript"
+name = "userwidgets"
+# account_id = "abcdefg01234567890"
+# zone_id = "abcdefg01234567890"
+workers_dev = true
+routes = [
+	
+]
+vars = { issuer = "userwidgets" }
+
+[build]
+command = "npm install && npm run build:api"
+[build.upload]
+format = "modules"
+dir = "dist/"
+main = "_worker.js"
+
+[durable_objects]
+bindings = [
+]
+
+[env.wrangler]
+workers_dev = true
+vars = { adminSecret = "secret" }
+durable_objects.bindings = [
+]
+
+[env.miniflare]
+workers_dev = true
+# account_id = "4bcc6b2f51b1ed579925a357e75eb6b8"
+vars = { issuer = "miniflare", adminSecret = "secret" }
+durable_objects.bindings = [
+]
+
+[miniflare]
+durable_objects_persist = "./.miniflare/durable-objects/"
+kv_persist = "./.miniflare/kv/"

@@ -1,0 +1,90 @@
+{
+  "name": "@userwidgets/api",
+  "version": "0.0.1",
+  "description": "The userwidgets app api.",
+  "private": true,
+  "repository": "https://github.com/userwidgets/api",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/userwidgets/api/issues"
+  },
+  "homepage": "https://github.com/userwidgets/api",
+  "main": "./dist/_worker.js",
+  "module": "./dist/_worker.js",
+  "jest": {
+    "transform": {
+      "^.+\\.(j|t)sx?$": "ts-jest"
+    },
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/(?!(cryptly|authly|isoly|gracely|cloudly-http|cloudly-router|cloudly-formdata)/.*)"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.test.json",
+        "setTimeout": 2000
+      }
+    },
+    "testEnvironment": "node",
+    "testRegex": "((\\.|/)(test|spec))(\\.|\\/.+)(jsx?|tsx?)$",
+    "testPathIgnorePatterns": [
+      "node_modules/",
+      "dist/"
+    ],
+    "collectCoverageFrom": [
+      "**/*.{ts,tsx,js,jsx}",
+      "!**/node_modules/**",
+      "!**/dist/**"
+    ],
+    "preset": "ts-jest",
+    "testMatch": null
+  },
+  "scripts": {
+    "lint": "eslint '**/*.{ts,tsx}'",
+    "fix": "eslint '**/*.{ts,tsx}' --fix",
+    "clean": "rimraf dist node_modules coverage",
+    "test": "npm run build && node --experimental-vm-modules node_modules/.bin/jest --maxWorkers=2",
+    "login": "wrangler login",
+    "transpile": "tsc --project tsconfig.test.json",
+    "test:watch": "watch jest",
+    "build": "rollup --config rollup.config.js",
+    "build:local": "rollup --config rollup.dev.config.js",
+    "start": "wrangler dev --env wrangler",
+    "start:local": "(rollup --config rollup.dev.config.js --watch) & (node --experimental-vm-modules --inspect ./node_modules/miniflare/dist/src/cli.js dist/_worker.js --wrangler-env miniflare --watch --live-reload -B 'while [ ! -f dist/_worker.js ]; do sleep 0.1; done' && kill $!)",
+    "kill": "(ps -aux | grep rollup | grep watch | awk '{print $2}' | xargs kill $1) && (lsof -i tcp:8787 | grep 8787 | awk '{print $2}' | xargs kill $1)"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^3.13.0",
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-typescript": "^8.3.3",
+    "@types/jest": "^28.1.3",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "eslint": "^8.18.0",
+    "eslint-plugin-prettierx": "github:utily/eslint-plugin-prettierx#utily-20220323",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "jest": "^28.1.1",
+    "jest-cli": "^28.1.1",
+    "miniflare": "^2.5.1",
+    "prettierx": "github:utily/prettierx#utily-20220323",
+    "puppeteer": "^14.4.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.75.7",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-dotenv": "^0.3.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "ts-jest": "^28.0.5",
+    "tslib": "^2.4.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "authly": "^2.0.1",
+    "cloudly-formdata": "^0.0.8",
+    "cloudly-http": "^0.0.47",
+    "cloudly-rest": "^0.0.11",
+    "cloudly-router": "^0.0.22",
+    "gracely": "^2.0.2",
+    "isoly": "^2.0.1"
+  }
+}

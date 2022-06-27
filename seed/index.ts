@@ -16,6 +16,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else {
+		
 		if (
 			gracely.Error.is(
 				(result = await context.storage.user.seed({

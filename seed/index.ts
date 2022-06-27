@@ -8,7 +8,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 	let result: any | gracely.Error = gracely.success.noContent()
 	console.log(request.header.authorization)
 	const admin = await context.authenticator.authenticate(request, "admin")
-	console.log(admin)
 	if (!admin)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.storage.user))

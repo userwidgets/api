@@ -1,5 +1,5 @@
 import * as gracely from "gracely"
-import * as model from "../../../../model"
+import * as model from "@userwidgets/model"
 import * as common from "../../../common"
 
 export class User {
@@ -14,6 +14,7 @@ export class User {
 		)
 	}
 	async authenticate(credentials: model.User.Credentials): Promise<model.User | gracely.Error> {
+		console.log("was here!")
 		const response: model.User | gracely.Error = await common.DurableObject.Client.open(
 			this.userNamespace,
 			credentials.user

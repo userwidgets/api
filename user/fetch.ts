@@ -1,7 +1,7 @@
 import * as gracely from "gracely"
+import * as model from "@userwidgets/model"
 // import * as authly from "authly"
 import * as http from "cloudly-http"
-import * as model from "../../model"
 import { Context } from "../Context"
 import { router } from "../router"
 

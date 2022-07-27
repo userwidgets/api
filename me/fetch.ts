@@ -1,7 +1,7 @@
 import * as gracely from "gracely"
 import * as authly from "authly"
+import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
-import * as model from "../../model"
 import { Context } from "../Context"
 import { router } from "../router"
 
@@ -12,7 +12,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = context.storage.user
 	else if (!model.User.Credentials.is(credentials))
 		result = gracely.client.unauthorized("Failed to authorize request.")
-	else if (request.header.acceptLanguage)
+	else if (!request.header.application)
 		result = gracely.client.missingHeader("Application", "Must include Application id for this resource.")
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader("Application", "Expected Application value to be a string.")

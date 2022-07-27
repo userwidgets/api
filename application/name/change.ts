@@ -12,9 +12,9 @@
 // 		result = context.storage.application
 // 	else if (!request.parameter.id)
 // 		result = gracely.client.invalidPathArgument(
-// 			"/api/application/:id/name", 
-// 			"id", 
-// 			"string", 
+// 			"/api/application/:id/name",
+// 			"id",
+// 			"string",
 // 			"URL parameter id is required for this endpoint."
 // 			)
 // 	else if (typeof name == "string")

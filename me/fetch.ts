@@ -17,16 +17,11 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader("Application", "Expected Application value to be a string.")
 	else {
-		const response = await context.storage.user.authenticate(credentials)
+		const response = await context.storage.user.authenticate(credentials, request.header.application)
 		const issuer = context.authenticator.createIssuer(request.header.application)
 		result = gracely.Error.is(response)
 			? response
-			: !Object.keys(response.permissions).includes(request.header.application)
-			? gracely.client.unauthorized()
-			: (await issuer.sign({
-					...response,
-					permissions: response.permissions[request.header.application],
-			  })) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
+			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
 	return result
 }

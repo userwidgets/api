@@ -34,13 +34,17 @@ export async function change(request: http.Request, context: Context): Promise<h
 		result = !model.User.is(user)
 			? user
 			: key == "admin" ||
-			  !Object.keys(user.permissions[key.audience])
-					.filter(orgId => Object.keys(key.permissions).includes(orgId))
-					.some(orgId => key.permissions[orgId] == "*")
+			  (key.audience != request.header.application &&
+					user.permissions[key.audience] &&
+					(key.permissions["*"].user.write ||
+						Object.keys(user.permissions[key.audience]).some(
+							organizationId => key.permissions[organizationId]?.user.write
+						)))
 			? gracely.client.unauthorized("Missing privileges to preform actions on this user.")
 			: await context.storage.user.changeName(email, entityTag, names)
 	} else
-		result = await context.storage.user.changeName(email, entityTag, names)
+		result = await context.storage.user.changeName(key.email, entityTag, names)
+
 	return result
 }
 router.add("PUT", "/api/user/:email/name", change)

@@ -26,4 +26,4 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	return result
 }
 
-router.add("GET", "/api/me", fetch)
+router.add("GET", "/me", fetch)

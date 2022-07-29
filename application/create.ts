@@ -18,4 +18,4 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = await context.storage.application.create(application)
 	return result
 }
-router.add("POST", "/api/application", create)
+router.add("POST", "/application", create)

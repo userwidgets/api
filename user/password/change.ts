@@ -37,4 +37,4 @@ export async function change(request: http.Request, context: Context): Promise<h
 		result = await context.storage.user.changePassword(key.email, passwords)
 	return result
 }
-router.add("PUT", "/api/user/:email/password", change)
+router.add("PUT", "/user/:email/password", change)

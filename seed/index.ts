@@ -206,4 +206,4 @@ export async function create(request: http.Request, context: Context): Promise<h
 	return result
 }
 
-router.add("GET", "/api/seed", create)
+router.add("GET", "/seed", create)

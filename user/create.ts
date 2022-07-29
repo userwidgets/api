@@ -15,4 +15,4 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = await context.storage.user.create(user)
 	return result
 }
-router.add("POST", "/api/user", create)
+router.add("POST", "/user", create)

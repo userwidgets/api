@@ -47,4 +47,4 @@ export async function change(request: http.Request, context: Context): Promise<h
 
 	return result
 }
-router.add("PUT", "/api/user/:email/name", change)
+router.add("PUT", "/user/:email/name", change)

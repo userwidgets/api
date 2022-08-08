@@ -37,7 +37,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 			  (key.audience != request.header.application &&
 					user.permissions[key.audience] &&
 					(key.permissions["*"].user.write ||
-						Object.keys(user.permissions[key.audience]).some(
+						Object.keys(user.permissions[key.audience] as Record<string, model.Organization | undefined>).some(
 							organizationId => key.permissions[organizationId]?.user.write
 						)))
 			? gracely.client.unauthorized("Missing privileges to preform actions on this user.")

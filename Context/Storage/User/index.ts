@@ -46,18 +46,19 @@ export class User {
 						)
 					).filter(response => !gracely.Error.is(response)) as model.User[]
 			  ).reduce((users, user) => {
-					if (user.permissions[applicationId])
+					const permissions = user.permissions[applicationId]
+					if (permissions)
 						if (!organizationIds)
 							users.push({ ...user, permissions: { applicationId: user.permissions[applicationId] } })
 						else if (
 							user.permissions[applicationId] &&
-							organizationIds.some(organizationId => user.permissions[applicationId][organizationId])
+							organizationIds.some(organizationId => permissions[organizationId])
 						)
 							users.push({
 								...user,
 								permissions: {
 									applicationId: Object.fromEntries(
-										Object.entries(user.permissions[applicationId]).filter(
+										Object.entries(permissions).filter(
 											([organizationId, _]) => organizationIds.includes(organizationId) || organizationId == "*"
 										)
 									) as Record<"*", model.User.Permissions.Application> &

@@ -1,5 +1,5 @@
 import * as gracely from "gracely"
-import * as model from "../../../../model"
+import * as model from "@userwidgets/model"
 import * as common from "../../../common"
 
 export class User {
@@ -13,17 +13,22 @@ export class User {
 			credentials
 		)
 	}
-	async authenticate(credentials: model.User.Credentials): Promise<model.User | gracely.Error> {
-		const response: model.User | gracely.Error = await common.DurableObject.Client.open(
-			this.userNamespace,
-			credentials.user
-		).post<model.User>("user/authenticate", credentials)
-		return response
+	async authenticate(
+		credentials: model.User.Credentials,
+		applicationId: string
+	): Promise<model.User.Key.Creatable | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, credentials.user).post<model.User>(
+			"user/authenticate",
+			credentials
+		)
+		return gracely.Error.is(response)
+			? response
+			: model.User.toKey(response, applicationId) ?? gracely.client.notFound()
 	}
-	async list(application: string, organizations: string[]): Promise<model.User[] | gracely.Error> {
+	async list(applicationId: string, organizationIds?: string[]): Promise<model.User[] | gracely.Error> {
 		const response = await common.DurableObject.Client.open(
 			this.applicationNamespace,
-			application
+			applicationId
 		).get<model.Application>("application")
 		return gracely.Error.is(response)
 			? response
@@ -40,19 +45,33 @@ export class User {
 							)
 						)
 					).filter(response => !gracely.Error.is(response)) as model.User[]
-			  ).map(user => ({
-					...user,
-					permissions: {
-						[application]: Object.fromEntries(
-							Object.entries(user.permissions[application]).filter(([orgId, _]) => organizations.includes(orgId))
-						),
-					},
-			  }))
+			  ).reduce((users, user) => {
+					const permissions = user.permissions[applicationId]
+					if (permissions)
+						if (!organizationIds)
+							users.push({ ...user, permissions: { applicationId: user.permissions[applicationId] } })
+						else if (
+							user.permissions[applicationId] &&
+							organizationIds.some(organizationId => permissions[organizationId])
+						)
+							users.push({
+								...user,
+								permissions: {
+									applicationId: Object.fromEntries(
+										Object.entries(permissions).filter(
+											([organizationId, _]) => organizationIds.includes(organizationId) || organizationId == "*"
+										)
+									) as Record<"*", model.User.Permissions.Application> &
+										Record<Exclude<string, "*">, model.User.Permissions.Organization | undefined>,
+								},
+							})
+					return users
+			  }, [] as model.User[])
 	}
 
 	async changePassword(
 		email: string,
-		passwordChange: model.User.PasswordChange
+		passwordChange: model.User.Password.Change
 	): Promise<gracely.Result | gracely.Error> {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<"">(
 			"user/password",

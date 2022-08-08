@@ -48,9 +48,9 @@
     "test:watch": "watch jest",
     "build": "rollup --config rollup.config.js",
     "build:local": "rollup --config rollup.dev.config.js",
-    "start": "wrangler dev --env wrangler",
-    "start:local": "(rollup --config rollup.dev.config.js --watch) & (node --experimental-vm-modules --inspect ./node_modules/miniflare/dist/src/cli.js dist/_worker.js --wrangler-env miniflare --watch --live-reload -B 'while [ ! -f dist/_worker.js ]; do sleep 0.1; done' && kill $!)",
-    "kill": "(ps -aux | grep rollup | grep watch | awk '{print $2}' | xargs kill $1) && (lsof -i tcp:8787 | grep 8787 | awk '{print $2}' | xargs kill $1)"
+    "start:wrangler": "wrangler dev --env wrangler",
+    "start": "(rollup --config rollup.dev.config.js --watch) & (node --experimental-vm-modules --inspect ./node_modules/miniflare/dist/src/cli.js dist/_worker.js --wrangler-env miniflare --watch --live-reload -B 'while [ ! -f dist/_worker.js ]; do sleep 0.1; done' && kill $!)",
+		"kill": "(grep port wrangler.toml | awk '{print $3}' | xargs -i lsof -i :{} | awk '{if (NR!=1) {print $2}}' | xargs kill 2>/dev/null) && (ps -aux | grep rollup | grep watch | awk '{print $2}' | xargs kill 2>/dev/null)"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.13.0",
@@ -66,7 +66,7 @@
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "jest": "^28.1.1",
     "jest-cli": "^28.1.1",
-    "miniflare": "^2.5.1",
+    "miniflare": "^2.6.0",
     "prettierx": "github:utily/prettierx#utily-20220323",
     "puppeteer": "^14.4.1",
     "rimraf": "^3.0.2",
@@ -79,6 +79,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
+    "@userwidgets/model": "^0.0.11",
     "authly": "^2.0.1",
     "cloudly-formdata": "^0.0.8",
     "cloudly-http": "^0.0.47",

@@ -1,6 +1,6 @@
 import * as gracely from "gracely"
+import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
-import * as model from "../../../../../../model"
 import { Context } from "../../../Context"
 import { router } from "../router"
 
@@ -18,7 +18,6 @@ export async function seed(request: http.Request, context: Context): Promise<mod
 		result = gracely.client.malformedContent("id", "string", "Application with this id already exists.")
 	else
 		await context.state.storage.put<model.Application>("data", (result = application))
-	console.log(result)
 	return result
 }
 

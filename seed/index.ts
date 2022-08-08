@@ -6,9 +6,7 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: any | gracely.Error = gracely.success.noContent()
-	console.log(request.header.authorization)
 	const admin = await context.authenticator.authenticate(request, "admin")
-	console.log(admin)
 	if (!admin)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.storage.user))
@@ -16,102 +14,196 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else {
-		if (
-			gracely.Error.is(
-				(result = await context.storage.user.seed({
-					email: "simon@app.com",
-					name: { first: "Simon", last: "" },
-					permissions: {
-						paxportAppId: { "*": "*", paxportOrgId: "*" },
-						issuefabAppId: { "*": "*", issuefabOrgId: "*", paxportOrgId: "*" },
+		const responses = await Promise.all([
+			context.storage.user.seed({
+				email: "john@example.com",
+				name: { first: "John", last: "Doe" },
+				permissions: {
+					paxportAppId: {
+						"*": {
+							application: {
+								read: true,
+								write: true,
+							},
+							organization: {
+								read: true,
+								write: true,
+							},
+							user: {
+								read: true,
+								write: true,
+							},
+						},
+						paxportOrgId: {
+							organization: {
+								read: true,
+								write: true,
+							},
+							user: {
+								read: true,
+								write: true,
+							},
+						},
 					},
-					modified: isoly.DateTime.now(),
-				}))
-			)
-		)
-			console.log(result)
-		else if (
-			gracely.Error.is(
-				(result = await context.storage.user.seed({
-					email: "erik@app.com",
-					name: { first: "Erik", last: "" },
-					permissions: { issuefabAppId: { "*": "", issuefabOrgId: "*" } },
-					modified: isoly.DateTime.now(),
-				}))
-			)
-		)
-			console.log(result)
-		else if (
-			gracely.Error.is(
-				(result = await context.storage.user.seed({
-					email: "amanda@app.com",
-					name: { first: "Amanda", last: "" },
-					permissions: { paxportAppId: { "*": "", paxportOrgId: "" } },
-					modified: isoly.DateTime.now(),
-				}))
-			)
-		)
-			console.log(result)
-		else if (
-			gracely.Error.is(
-				(result = await context.storage.user.seed({
-					email: "elias@app.com",
-					name: { first: "Elias", last: "" },
-					permissions: { issuefabAppId: { "*": "", issuefabOrgId: "" } },
-					modified: isoly.DateTime.now(),
-				}))
-			)
-		)
-			console.log(result)
-		else if (
-			gracely.Error.is(
-				(result = await context.storage.application.seed({
-					id: "issuefabAppId",
-					name: "Issuefab",
-					organizations: {
+					issuefabAppId: {
+						"*": {
+							application: {},
+							organization: {},
+							user: {},
+						},
 						issuefabOrgId: {
-							id: "issuefabOrgId",
-							name: "Issuefab AB",
-							users: ["elias@app.com", "simon@app.com", "erik@app.com"],
-							modified: isoly.DateTime.now(),
+							organization: {
+								read: true,
+								write: true,
+							},
+							user: {
+								read: true,
+								write: true,
+							},
 						},
 						paxportOrgId: {
-							id: "paxportOrgId",
-							name: "Paxport AB",
-							users: ["simon@app.com"],
-							modified: isoly.DateTime.now(),
+							organization: {
+								read: true,
+								write: true,
+							},
+							user: {
+								read: true,
+								write: true,
+							},
 						},
 					},
-					permissions: "",
-					modified: isoly.DateTime.now(),
-				}))
-			)
-		)
-			console.log(result)
-		else if (
-			gracely.Error.is(
-				(result = await context.storage.application.seed({
-					id: "paxportAppId",
-					name: "Issuefab",
-					organizations: {
+				},
+				// permissions: {
+				// 	paxportAppId: { "*": "*", paxportOrgId: "*" },
+				// 	issuefabAppId: { "*": "*", issuefabOrgId: "*", paxportOrgId: "*" },
+				// },
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.user.seed({
+				email: "richard@example.com",
+				name: { first: "Richard", last: "Doe" },
+				permissions: {
+					issuefabAppId: {
+						"*": {
+							application: {},
+							organization: {},
+							user: {},
+						},
+						issuefabOrgId: {
+							organization: {
+								read: true,
+								write: true,
+							},
+							user: {
+								read: true,
+								write: true,
+							},
+						},
+					},
+				},
+				// permissions: { issuefabAppId: { "*": "", issuefabOrgId: "*" } },
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.user.seed({
+				email: "jane@example.com",
+				name: { first: "Jane", last: "Doe" },
+				permissions: {
+					paxportAppId: {
+						"*": {
+							application: {},
+							organization: {},
+							user: {},
+						},
 						paxportOrgId: {
-							id: "paxportOrgId",
-							name: "Paxport AB",
-							users: ["simon@app.com", "amanda@app.com"],
-							modified: isoly.DateTime.now(),
+							organization: {},
+							user: {
+								read: true,
+							},
 						},
 					},
-					permissions: "",
-					modified: isoly.DateTime.now(),
-				}))
-			)
-		)
-			console.log(result)
-		else {
-			result = gracely.success.noContent()
-		}
+				},
+				// permissions: { paxportAppId: { "*": "", paxportOrgId: "" } },
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.user.seed({
+				email: "mary@example.com",
+				name: { first: "Mary", last: "Doe" },
+				permissions: {
+					issuefabAppId: {
+						"*": {
+							application: {},
+							organization: {},
+							user: {},
+						},
+						issuefabOrgId: {
+							organization: {},
+							user: {},
+						},
+					},
+				},
+				// permissions: { issuefabAppId: { "*": "", issuefabOrgId: "" } },
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.user.seed({
+				email: "james@example.com",
+				name: { first: "James", last: "Doe" },
+				permissions: {
+					issuefabAppId: {
+						"*": {
+							application: {},
+							organization: {},
+							user: {},
+						},
+						issuefabOrgId: {
+							organization: {},
+							user: {},
+						},
+					},
+				},
+				// permissions: { issuefabAppId: { "*": "", issuefabOrgId: "" } },
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.application.seed({
+				id: "issuefabAppId",
+				name: "Issuefab",
+				organizations: {
+					issuefabOrgId: {
+						id: "issuefabOrgId",
+						name: "Issuefab AB",
+						users: ["john@example.com", "richard@example.com", "mary@example.com", "james@example.com"],
+						permissions: ["organization", "user"],
+						modified: isoly.DateTime.now(),
+					},
+					paxportOrgId: {
+						id: "paxportOrgId",
+						name: "Paxport AB",
+						users: ["john@example.com"],
+						permissions: ["organization", "user"],
+						modified: isoly.DateTime.now(),
+					},
+				},
+				permissions: ["application", "organization", "user"],
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.application.seed({
+				id: "paxportAppId",
+				name: "Issuefab",
+				organizations: {
+					paxportOrgId: {
+						id: "paxportOrgId",
+						name: "Paxport AB",
+						users: ["john@example.com", "jane@example.com"],
+						permissions: ["organization", "user"],
+						modified: isoly.DateTime.now(),
+					},
+				},
+				permissions: ["application", "organization", "user"],
+				modified: isoly.DateTime.now(),
+			}),
+		])
+		result = responses.find(response => gracely.Error.is(response)) ?? gracely.success.noContent()
 	}
 	return result
 }
 
-router.add("GET", "/api/seed", create)
+router.add("GET", "/seed", create)

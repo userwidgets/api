@@ -1,6 +1,6 @@
 import * as cryptly from "cryptly"
 import * as gracely from "gracely"
-import * as model from "../../../../model"
+import * as model from "@userwidgets/model"
 import * as common from "../../../common"
 
 export class Application {

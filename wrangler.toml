@@ -8,6 +8,7 @@ routes = [
 	
 ]
 vars = { issuer = "userwidgets" }
+port = 8788
 
 [build]
 command = "npm install && npm run build:api"
@@ -38,3 +39,4 @@ vars = { hashSecret = "hashing", privateSecret = "", adminSecret = "secret", iss
 [miniflare]
 durable_objects_persist = "./.miniflare/durable-objects/"
 kv_persist = "./.miniflare/kv/"
+port = 8788

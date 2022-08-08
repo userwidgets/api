@@ -36,7 +36,8 @@
 		"paramly",
 		"persistly",
 		"servly",
-		"uply"
+		"uply",
+		"userwidgets"
 	],
   "debug.javascript.autoAttachFilter": "disabled",
 	"liveServer.settings.root": "/dist"

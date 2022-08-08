@@ -1,5 +1,5 @@
+import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
-import * as model from "../../model"
 import { Environment } from "./Environment"
 
 export class Authenticator {

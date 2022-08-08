@@ -1,20 +1,20 @@
 import * as cryptly from "cryptly"
 import * as gracely from "gracely"
+import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
-import * as model from "../../../../../../../model"
 import { Context } from "../../../../Context"
 import * as password from "../../password"
 import { router } from "../../router"
 
 export async function change(request: http.Request, context: Context): Promise<gracely.Result | gracely.Error> {
 	let result: gracely.Result | gracely.Error
-	const passwords: model.User.PasswordChange = await request.body
+	const passwords: model.User.Password.Change = await request.body
 	const current = await context.state.storage.get<cryptly.Password.Hash>("password")
-	if (!model.User.PasswordChange.is(passwords))
+	if (!model.User.Password.Change.is(passwords))
 		result = gracely.client.malformedContent(
-			"User.PasswordChange",
-			"User.PasswordChange",
-			"A valid User.PasswordChange object is required to change a users password."
+			"User.Password.Change",
+			"User.Password.Change",
+			"A valid User.Password.Change object is required to change a users password."
 		)
 	else if (!current)
 		result = gracely.client.notFound("Requested user does not exist.")

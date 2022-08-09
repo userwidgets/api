@@ -19,7 +19,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 				email: "john@example.com",
 				name: { first: "John", last: "Doe" },
 				permissions: {
-					paxportAppId: {
+					paxportApplicationId: {
 						"*": {
 							application: {
 								read: true,
@@ -34,7 +34,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 								write: true,
 							},
 						},
-						paxportOrgId: {
+						paxportOrganizationId: {
 							organization: {
 								read: true,
 								write: true,
@@ -45,13 +45,13 @@ export async function create(request: http.Request, context: Context): Promise<h
 							},
 						},
 					},
-					issuefabAppId: {
+					issuefabApplicationId: {
 						"*": {
 							application: {},
 							organization: {},
 							user: {},
 						},
-						issuefabOrgId: {
+						issuefabOrganizationId: {
 							organization: {
 								read: true,
 								write: true,
@@ -60,8 +60,12 @@ export async function create(request: http.Request, context: Context): Promise<h
 								read: true,
 								write: true,
 							},
+							delegation: {
+								read: true,
+								write: true,
+							},
 						},
-						paxportOrgId: {
+						paxportOrganizationId: {
 							organization: {
 								read: true,
 								write: true,
@@ -74,8 +78,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 					},
 				},
 				// permissions: {
-				// 	paxportAppId: { "*": "*", paxportOrgId: "*" },
-				// 	issuefabAppId: { "*": "*", issuefabOrgId: "*", paxportOrgId: "*" },
+				// 	paxportApplicationId: { "*": "*", paxportOrganizationId: "*" },
+				// 	issuefabApplicationId: { "*": "*", issuefabOrganizationId: "*", paxportOrganizationId: "*" },
 				// },
 				modified: isoly.DateTime.now(),
 			}),
@@ -83,13 +87,13 @@ export async function create(request: http.Request, context: Context): Promise<h
 				email: "richard@example.com",
 				name: { first: "Richard", last: "Doe" },
 				permissions: {
-					issuefabAppId: {
+					issuefabApplicationId: {
 						"*": {
 							application: {},
 							organization: {},
 							user: {},
 						},
-						issuefabOrgId: {
+						issuefabOrganizationId: {
 							organization: {
 								read: true,
 								write: true,
@@ -101,20 +105,20 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				// permissions: { issuefabAppId: { "*": "", issuefabOrgId: "*" } },
+				// permissions: { issuefabApplicationId: { "*": "", issuefabOrganizationId: "*" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
 				email: "jane@example.com",
 				name: { first: "Jane", last: "Doe" },
 				permissions: {
-					paxportAppId: {
+					paxportApplicationId: {
 						"*": {
 							application: {},
 							organization: {},
 							user: {},
 						},
-						paxportOrgId: {
+						paxportOrganizationId: {
 							organization: {},
 							user: {
 								read: true,
@@ -122,60 +126,60 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				// permissions: { paxportAppId: { "*": "", paxportOrgId: "" } },
+				// permissions: { paxportApplicationId: { "*": "", paxportOrganizationId: "" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
 				email: "mary@example.com",
 				name: { first: "Mary", last: "Doe" },
 				permissions: {
-					issuefabAppId: {
+					issuefabApplicationId: {
 						"*": {
 							application: {},
 							organization: {},
 							user: {},
 						},
-						issuefabOrgId: {
+						issuefabOrganizationId: {
 							organization: {},
 							user: {},
 						},
 					},
 				},
-				// permissions: { issuefabAppId: { "*": "", issuefabOrgId: "" } },
+				// permissions: { issuefabApplicationId: { "*": "", issuefabOrganizationId: "" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
 				email: "james@example.com",
 				name: { first: "James", last: "Doe" },
 				permissions: {
-					issuefabAppId: {
+					issuefabApplicationId: {
 						"*": {
 							application: {},
 							organization: {},
 							user: {},
 						},
-						issuefabOrgId: {
+						issuefabOrganizationId: {
 							organization: {},
 							user: {},
 						},
 					},
 				},
-				// permissions: { issuefabAppId: { "*": "", issuefabOrgId: "" } },
+				// permissions: { issuefabApplicationId: { "*": "", issuefabOrganizationId: "" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.application.seed({
-				id: "issuefabAppId",
+				id: "issuefabApplicationId",
 				name: "Issuefab",
 				organizations: {
-					issuefabOrgId: {
-						id: "issuefabOrgId",
+					issuefabOrganizationId: {
+						id: "issuefabOrganizationId",
 						name: "Issuefab AB",
 						users: ["john@example.com", "richard@example.com", "mary@example.com", "james@example.com"],
 						permissions: ["organization", "user"],
 						modified: isoly.DateTime.now(),
 					},
-					paxportOrgId: {
-						id: "paxportOrgId",
+					paxportOrganizationId: {
+						id: "paxportOrganizationId",
 						name: "Paxport AB",
 						users: ["john@example.com"],
 						permissions: ["organization", "user"],
@@ -186,11 +190,11 @@ export async function create(request: http.Request, context: Context): Promise<h
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.application.seed({
-				id: "paxportAppId",
+				id: "paxportApplicationId",
 				name: "Issuefab",
 				organizations: {
-					paxportOrgId: {
-						id: "paxportOrgId",
+					paxportOrganizationId: {
+						id: "paxportOrganizationId",
 						name: "Paxport AB",
 						users: ["john@example.com", "jane@example.com"],
 						permissions: ["organization", "user"],

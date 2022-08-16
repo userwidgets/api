@@ -34,4 +34,4 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	return result
 }
 
-router.add("GET", "api/user/:email", fetch)
+router.add("GET", "/user/:email", fetch)

@@ -28,9 +28,8 @@ export async function list(request: http.Request, context: Context): Promise<htt
 								organizationIds.push(organizationId)
 							return organizationIds
 						}, [] as string[])
-						// Object.keys(key.permissions).filter(organizationId => organizationId != "*")
 				  )
 	return result
 }
 
-router.add("GET", "api/user", list)
+router.add("GET", "/user", list)

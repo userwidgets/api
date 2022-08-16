@@ -15,4 +15,4 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 
 	return result
 }
-router.add("GET", "api/version", fetch)
+router.add("GET", "/version", fetch)

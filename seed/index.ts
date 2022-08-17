@@ -21,66 +21,32 @@ export async function create(request: http.Request, context: Context): Promise<h
 				permissions: {
 					paxportApplicationId: {
 						"*": {
-							application: {
-								read: true,
-								write: true,
-							},
-							organization: {
-								read: true,
-								write: true,
-							},
-							user: {
-								read: true,
-								write: true,
-							},
+							application: { read: true, write: true },
+							organization: { read: true, write: true },
+							user: { read: true, write: true },
 						},
 						paxportOrganizationId: {
-							organization: {
-								read: true,
-								write: true,
-							},
-							user: {
-								read: true,
-								write: true,
-							},
+							organization: { read: true, write: true },
+							user: { read: true, write: true },
 						},
 					},
 					issuefabApplicationId: {
 						"*": {
-							application: {},
-							organization: {},
-							user: {},
+							application: { read: true, write: true },
+							organization: { read: true, write: true },
+							user: { read: true, write: true },
 						},
 						issuefabOrganizationId: {
-							organization: {
-								read: true,
-								write: true,
-							},
-							user: {
-								read: true,
-								write: true,
-							},
-							delegation: {
-								read: true,
-								write: true,
-							},
+							organization: { read: true, write: true },
+							user: { read: true, write: true },
+							delegation: { read: true, write: true },
 						},
 						paxportOrganizationId: {
-							organization: {
-								read: true,
-								write: true,
-							},
-							user: {
-								read: true,
-								write: true,
-							},
+							organization: { read: true, write: true },
+							user: { read: true, write: true },
 						},
 					},
 				},
-				// permissions: {
-				// 	paxportApplicationId: { "*": "*", paxportOrganizationId: "*" },
-				// 	issuefabApplicationId: { "*": "*", issuefabOrganizationId: "*", paxportOrganizationId: "*" },
-				// },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
@@ -94,18 +60,11 @@ export async function create(request: http.Request, context: Context): Promise<h
 							user: {},
 						},
 						issuefabOrganizationId: {
-							organization: {
-								read: true,
-								write: true,
-							},
-							user: {
-								read: true,
-								write: true,
-							},
+							organization: { read: true, write: true },
+							user: { read: true, write: true },
 						},
 					},
 				},
-				// permissions: { issuefabApplicationId: { "*": "", issuefabOrganizationId: "*" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
@@ -120,13 +79,28 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 						paxportOrganizationId: {
 							organization: {},
-							user: {
-								read: true,
-							},
+							user: { read: true },
 						},
 					},
 				},
-				// permissions: { paxportApplicationId: { "*": "", paxportOrganizationId: "" } },
+				modified: isoly.DateTime.now(),
+			}),
+			context.storage.user.seed({
+				email: "jessie@example.com",
+				name: { first: "Jessie", last: "Doe" },
+				permissions: {
+					issuefabApplicationId: {
+						"*": {
+							application: {},
+							organization: {},
+							user: {},
+						},
+						paxportOrganizationId: {
+							organization: {},
+							user: {},
+						},
+					},
+				},
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
@@ -145,7 +119,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				// permissions: { issuefabApplicationId: { "*": "", issuefabOrganizationId: "" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.user.seed({
@@ -164,7 +137,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				// permissions: { issuefabApplicationId: { "*": "", issuefabOrganizationId: "" } },
 				modified: isoly.DateTime.now(),
 			}),
 			context.storage.application.seed({

@@ -6,7 +6,6 @@ import { Context } from "../Context"
 import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	console.log("POST /me/:tag create")
 	let result: authly.Token | gracely.Error
 	const tag = await context.tager.verifier.verify(request.parameter.tag)
 	const register: model.User.Credentials.Register | any = { ...(await request.body), user: tag?.email }
@@ -35,7 +34,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 router.add("POST", "/me/:tag", create)
 
 // application is created
-// organization is created
+// organization is created (permissions in body)
 // invites to users in the created organization goes out with a JWT in the invite URL
 // user user is prompted for name and password
 // data submitted from user (body) is complemented with JWT to get a full user
+// {{ issuefab can now make initial delegation to the user(s) that got the invite sent}}

@@ -44,10 +44,9 @@ export async function create(request: http.Request, context: Context): Promise<h
 							organization: {},
 							user: {},
 						},
-						[(result as model.Organization).id]: {
-							organization: { read: true, write: true },
-							user: { read: true, write: true },
-						},
+						[(result as model.Organization).id]: Object.fromEntries(
+							organization.permissions.map(permission => [permission, { read: true, write: true }])
+						) as model.User.Permissions.Organization,
 					},
 				}
 				const tag = await issuer.sign(signable)

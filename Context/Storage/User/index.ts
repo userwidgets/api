@@ -8,11 +8,24 @@ export class User {
 		private readonly applicationNamespace: DurableObjectNamespace
 	) {}
 	async create(applicationId: string, user: model.User.Creatable): Promise<model.User.Key.Creatable | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User.Key.Creatable>(
+		const response = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
 			"user",
 			user,
-			{ application: applicationId, contentType: "application/json;charset=UTF-8" }
+			{
+				application: applicationId,
+				contentType: "application/json;charset=UTF-8",
+			}
 		)
+		return gracely.Error.is(response)
+			? response
+			: model.User.toKey(response, applicationId) ?? gracely.client.notFound()
+	}
+	async patch(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, tag.email).patch<model.User>(
+			"user",
+			tag
+		)
+		return gracely.Error.is(response) ? response : model.User.toKey(response, tag.audience) ?? gracely.client.notFound()
 	}
 	async authenticate(
 		credentials: model.User.Credentials,
@@ -69,7 +82,6 @@ export class User {
 					return users
 			  }, [] as model.User[])
 	}
-
 	async changePassword(
 		email: string,
 		passwordChange: model.User.Password.Change
@@ -80,7 +92,6 @@ export class User {
 		)
 		return response == "" ? gracely.success.noContent() : response
 	}
-
 	async changeName(email: string, entityTag: string, names: model.User.Name): Promise<model.User | gracely.Error> {
 		return await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
 			"/user/name",
@@ -91,7 +102,6 @@ export class User {
 	async seed(user: model.User): Promise<model.User | gracely.Error> {
 		return await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>("user/seed", user)
 	}
-
 	async fetch(email: string): Promise<model.User | gracely.Error> {
 		return await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)
 	}

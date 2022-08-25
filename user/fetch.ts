@@ -1,6 +1,5 @@
 import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
-// import * as authly from "authly"
 import * as http from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
@@ -16,6 +15,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = gracely.client.missingHeader("Application", "Must include Application for this resource.")
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader("Application", "expected Application value to be a string.")
+	else if (!request.parameter.email)
+		result = gracely.client.invalidPathArgument("/user/:email", "email", "string", "")
 	else if (key == "admin" || key.email != request.parameter.email) {
 		const user = await context.storage.user.fetch(request.parameter.email)
 		result = !model.User.is(user)

@@ -7,10 +7,11 @@ export class User {
 		private readonly userNamespace: DurableObjectNamespace,
 		private readonly applicationNamespace: DurableObjectNamespace
 	) {}
-	async create(credentials: model.User.Credentials): Promise<model.User | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, credentials.user).post<model.User>(
+	async create(applicationId: string, user: model.User.Creatable): Promise<model.User.Key.Creatable | gracely.Error> {
+		return await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User.Key.Creatable>(
 			"user",
-			credentials
+			user,
+			{ application: applicationId, contentType: "application/json;charset=UTF-8" }
 		)
 	}
 	async authenticate(

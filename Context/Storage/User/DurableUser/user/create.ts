@@ -9,30 +9,39 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context) {
 	let result: model.User | gracely.Error
-	const credentials: model.User.Credentials | any = await request.body
+	const user: model.User.Creatable | any = await request.body
 	const current = await context.state.storage.get<model.User>("data")
-	if (!model.User.Credentials.is(credentials))
+	if (!model.User.Creatable.is(user))
 		result = gracely.client.malformedContent(
 			"User.Credentials",
 			"User.Credentials",
 			"A valid User.Credentials object is required to create a new user."
 		)
+	else if (!request.header.application)
+		result = gracely.client.missingHeader("Application", "")
+	else if (typeof request.header.application != "string")
+		result = gracely.client.malformedHeader("Application", "Only single value allowed.")
 	else if (current)
 		result = gracely.client.invalidContent("user", "A user with that email already exists.")
 	else {
-		const passwordHash = await password.hash(credentials.password, context.environment.hashSecret)
+		const passwordHash = await password.hash(user.password.new, context.environment.hashSecret)
 		if (gracely.Error.is(passwordHash))
 			result = passwordHash
 		else {
 			await context.state.storage.put<cryptly.Password.Hash>("password", passwordHash)
-			const emailUser = credentials.user.split("@").shift() ?? ""
+			const now = isoly.DateTime.now()
 			await context.state.storage.put<model.User>(
 				"data",
 				(result = {
-					name: { first: emailUser, last: emailUser },
-					email: credentials.user,
-					permissions: {},
-					modified: isoly.DateTime.now(),
+					name: user.name,
+					email: user.email,
+					permissions: {
+						[request.header.application]: {
+							...user.permissions,
+						},
+					},
+					created: now,
+					modified: now,
 				})
 			)
 		}

@@ -26,10 +26,11 @@ export async function create(
 	else if (current.organizations[id] && retries > 0)
 		result = await create(request, context, --retries)
 	else {
-		current.organizations[id] = result = { ...organization, id: id, modified: isoly.DateTime.now(), users: [] }
+		const now = isoly.DateTime.now()
+		current.organizations[id] = result = { ...organization, id: id, created: now, modified: now }
 		await context.state.storage.put<model.Application>("data", current)
 	}
 	return result
 }
 
-router.add("POST", "/application", create)
+router.add("POST", "/organization", create)

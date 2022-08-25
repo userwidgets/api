@@ -5,13 +5,50 @@ import { router } from "../router"
 import { Authenticator } from "./Authenticator"
 import { Environment } from "./Environment"
 import { Storage } from "./Storage"
+import { Tager } from "./Tager"
 
 export class Context {
 	constructor(
 		readonly environment: Environment,
 		readonly authenticator: Authenticator = new Authenticator(environment),
-		readonly storage: Storage = new Storage(environment)
+		readonly storage: Storage = new Storage(environment),
+		readonly tager: Tager = new Tager(environment)
 	) {}
+	async email(recipient: string, subject: string, content: string, type = "text/plain", dry_run = false) {
+		// docs: https://api.mailchannels.net/tx/v1/documentation
+		let result: gracely.Result | gracely.Error
+		if (!this.environment.email)
+			(result = gracely.success.noContent()) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
+		else {
+			const request = http.Request.create({
+				url: `https://api.mailchannels.net/tx/v1/send?dry_run=${dry_run}`,
+				method: "POST",
+				header: {
+					contentType: "application/json",
+				},
+				body: {
+					personalizations: [
+						{
+							to: [recipient],
+						},
+					],
+					from: {
+						email: this.environment.email,
+					},
+					subject: subject,
+					content: [
+						{
+							type: type,
+							value: content,
+						},
+					],
+				},
+			})
+			result = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+		}
+		return result
+	}
+
 	static async handle(request: Request, environment: Environment): Promise<Response> {
 		let result: http.Response
 		try {

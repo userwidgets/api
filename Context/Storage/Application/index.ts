@@ -9,12 +9,13 @@ export class Application {
 		return await common.DurableObject.Client.open(this.applicationNamespace, id).get<model.Application>(`application`)
 	}
 
-	async create(application: model.Application.Creatable): Promise<model.Application | gracely.Error> {
+	async create(application: model.Application.Creatable, ): Promise<model.Application | gracely.Error> {
 		const id = cryptly.Identifier.generate(4)
-		return await common.DurableObject.Client.open(this.applicationNamespace, id).post<model.Application>(
-			"application",
-			{ ...application, id: id }
+		const response = await common.DurableObject.Client.open(this.applicationNamespace, id).post<model.Application>(
+			`application/${id}`,
+			application
 		)
+		return response
 	}
 
 	async seed(application: model.Application): Promise<model.Application | gracely.Error> {

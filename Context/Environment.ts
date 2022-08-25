@@ -5,4 +5,5 @@ export interface Environment extends Record<string, undefined | string | Durable
 	issuer?: string
 	userNamespace?: DurableObjectNamespace
 	applicationNamespace?: DurableObjectNamespace
+	email?: string
 }

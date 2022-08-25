@@ -7,7 +7,7 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<model.Application | gracely.Error> {
 	let result: model.Application | gracely.Error
-	const application: (model.Application.Creatable & Record<"id", string>) | any = await request.body
+	const application: model.Application.Creatable | any = await request.body
 	const current = await context.state.storage.get<model.Application>("data")
 	if (!model.Application.Creatable.is(application))
 		result = gracely.client.malformedContent(
@@ -15,7 +15,7 @@ export async function create(request: http.Request, context: Context): Promise<m
 			"Application.Creatable",
 			"A valid Application.Creatable object is required to create a new application."
 		)
-	if (typeof application.id != "string")
+	else if (!request.parameter.id)
 		result = gracely.client.malformedContent(
 			"id",
 			"string",
@@ -26,9 +26,9 @@ export async function create(request: http.Request, context: Context): Promise<m
 	else
 		await context.state.storage.put<model.Application>(
 			"data",
-			(result = { ...application, modified: isoly.DateTime.now() })
+			(result = { ...application, id: request.parameter.id, modified: isoly.DateTime.now() })
 		)
 	return result
 }
 
-router.add("POST", "/application", create)
+router.add("POST", "/application/:id", create)

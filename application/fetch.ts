@@ -17,6 +17,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = gracely.client.malformedHeader("Application", "expected Application value to be a string.")
 	else if (key.audience != request.parameter.id)
 		result = gracely.client.unauthorized("forbidden")
+	else if (!request.parameter.id)
+		result = gracely.client.invalidPathArgument("/application/:id", "id", "string", "")
 	else
 		result = await context.storage.application.fetch(request.parameter.id)
 	return result

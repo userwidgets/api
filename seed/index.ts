@@ -14,6 +14,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else {
+		const now = isoly.DateTime.now()
 		const responses = await Promise.all([
 			context.storage.user.seed({
 				email: "john@example.com",
@@ -47,7 +48,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.user.seed({
 				email: "richard@example.com",
@@ -65,7 +67,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.user.seed({
 				email: "jane@example.com",
@@ -83,7 +86,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.user.seed({
 				email: "jessie@example.com",
@@ -101,7 +105,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.user.seed({
 				email: "mary@example.com",
@@ -119,7 +124,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.user.seed({
 				email: "james@example.com",
@@ -137,7 +143,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 						},
 					},
 				},
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.application.seed({
 				id: "issuefabApplicationId",
@@ -148,18 +155,21 @@ export async function create(request: http.Request, context: Context): Promise<h
 						name: "Issuefab AB",
 						users: ["john@example.com", "richard@example.com", "mary@example.com", "james@example.com"],
 						permissions: ["organization", "user"],
-						modified: isoly.DateTime.now(),
+						created: now,
+						modified: now,
 					},
 					paxportOrganizationId: {
 						id: "paxportOrganizationId",
 						name: "Paxport AB",
 						users: ["john@example.com"],
 						permissions: ["organization", "user"],
-						modified: isoly.DateTime.now(),
+						created: now,
+						modified: now,
 					},
 				},
 				permissions: ["application", "organization", "user"],
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 			context.storage.application.seed({
 				id: "paxportApplicationId",
@@ -170,11 +180,13 @@ export async function create(request: http.Request, context: Context): Promise<h
 						name: "Paxport AB",
 						users: ["john@example.com", "jane@example.com"],
 						permissions: ["organization", "user"],
-						modified: isoly.DateTime.now(),
+						created: now,
+						modified: now,
 					},
 				},
 				permissions: ["application", "organization", "user"],
-				modified: isoly.DateTime.now(),
+				created: now,
+				modified: now,
 			}),
 		])
 		result = responses.find(response => gracely.Error.is(response)) ?? gracely.success.noContent()

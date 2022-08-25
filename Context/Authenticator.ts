@@ -24,7 +24,7 @@ export class Authenticator {
 				: model.User.Key.Unsigned.Verifier.create())
 		)
 	}
-
+	constructor(public readonly environment: Environment) {}
 	createIssuer(audience: string) {
 		return model.User.Key.isIssuer(this.environment.issuer) && this.environment.privateSecret
 			? model.User.Key.Signed.Issuer.create(this.environment.issuer, this.environment.privateSecret, audience)
@@ -32,8 +32,6 @@ export class Authenticator {
 			? model.User.Key.Unsigned.Issuer.create(this.environment.issuer, audience)
 			: model.User.Key.Unsigned.Issuer.create("none")
 	}
-
-	constructor(public readonly environment: Environment) {}
 	async authenticate(request: http.Request, method: "admin"): Promise<"admin" | undefined>
 	async authenticate(request: http.Request, method: "token"): Promise<model.User.Key | undefined>
 	async authenticate(request: http.Request, method: "user"): Promise<model.User.Credentials | undefined>

@@ -7,6 +7,7 @@ import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	const credentials = await context.authenticator.authenticate(request, "user")
+	console.log("me/fetch/credentials", credentials)
 	let result: authly.Token | gracely.Error
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
@@ -23,6 +24,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 			? response
 			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
+	console.log("me/fetch/result", result)
 	return result
 }
 

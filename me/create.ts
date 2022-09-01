@@ -9,7 +9,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 	let result: authly.Token | gracely.Error
 	const tag = await context.tager.verifier.verify(request.parameter.tag)
 	const register: model.User.Credentials.Register | any = { ...(await request.body), user: tag?.email }
-	console.log("tag", tag)
+	const key = await context.authenticator.authenticate(request)
+	console.log(key)
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else if (!tag)
@@ -32,10 +33,3 @@ export async function create(request: http.Request, context: Context): Promise<h
 }
 
 router.add("POST", "/me/:tag", create)
-
-// application is created
-// organization is created (permissions in body)
-// invites to users in the created organization goes out with a JWT in the invite URL
-// user user is prompted for name and password
-// data submitted from user (body) is complemented with JWT to get a full user
-// {{ issuefab can now make initial delegation to the user(s) that got the invite sent}}

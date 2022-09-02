@@ -79,7 +79,7 @@
     "typescript": "^4.8.2"
   },
   "dependencies": {
-    "@userwidgets/model": "^0.0.19",
+    "@userwidgets/model": "^0.0.20",
     "authly": "^3.0.1",
     "cloudly-formdata": "^0.0.8",
     "cloudly-http": "^0.0.51",

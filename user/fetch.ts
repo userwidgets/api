@@ -6,7 +6,7 @@ import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.User | gracely.Error
-	const key = await context.authenticator.authenticate(request, "token", "admin")
+	const key = await context.authenticator.authenticate(request, "token")
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else if (!key)
@@ -17,21 +17,26 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = gracely.client.malformedHeader("Application", "expected Application value to be a string.")
 	else if (!request.parameter.email)
 		result = gracely.client.invalidPathArgument("/user/:email", "email", "string", "")
-	else if (key == "admin" || key.email != request.parameter.email) {
-		const user = await context.storage.user.fetch(request.parameter.email)
-		result = !model.User.is(user)
-			? user
-			: key == "admin" ||
-			  (key.audience != request.header.application &&
-					user.permissions[key.audience] &&
-					(key.permissions["*"].user.read ||
-						Object.keys(user.permissions[key.audience] as Record<string, model.Organization | undefined>).some(
-							organizationId => key.permissions[organizationId]?.user.read
-						)))
-			? gracely.client.unauthorized("Missing privileges to preform actions on this user.")
-			: await context.storage.user.fetch(request.parameter.email)
-	} else
-		result = await context.storage.user.fetch(key.email)
+	else
+		result =
+			(result = await context.storage.user.fetch(request.parameter.email)) && key.permissions["*"]?.user?.read
+				? result
+				: gracely.Error.is(result) || result.email == key.email
+				? result
+				: Object.keys(key.permissions)
+						.filter(id => id != "*")
+						.find(
+							organizationId =>
+								key.permissions[organizationId]?.user?.read &&
+								!gracely.Error.is(result) &&
+								organizationId in result.permissions
+						) && key.permissions["*"]?.organization?.read
+				? result
+				: (result.permissions = Object.fromEntries(
+						Object.entries(result.permissions).filter(
+							([organizationId, _]) => organizationId != "*" && organizationId in key.permissions
+						)
+				  )) && result
 	return result
 }
 

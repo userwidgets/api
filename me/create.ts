@@ -9,8 +9,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 	let result: authly.Token | gracely.Error
 	const tag = await context.tager.verifier.verify(request.parameter.tag)
 	const register: model.User.Credentials.Register | any = { ...(await request.body), user: tag?.email }
-	const key = await context.authenticator.authenticate(request)
-	console.log(key)
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else if (!tag)

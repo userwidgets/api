@@ -59,7 +59,7 @@ export class User {
 							)
 						)
 					).filter(response => !gracely.Error.is(response)) as model.User[]
-			  ).reduce((users, user) => {
+			  ).reduce<model.User[]>((users, user) => {
 					const permissions = user.permissions[applicationId]
 					if (permissions)
 						if (!organizationIds)
@@ -75,12 +75,11 @@ export class User {
 										Object.entries(permissions).filter(
 											([organizationId, _]) => organizationIds.includes(organizationId) || organizationId == "*"
 										)
-									) as Record<"*", model.User.Permissions.Application> &
-										Record<Exclude<string, "*">, model.User.Permissions.Organization | undefined>,
+									),
 								},
 							})
 					return users
-			  }, [] as model.User[])
+			  }, [])
 	}
 	async changePassword(
 		email: string,

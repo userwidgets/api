@@ -26,8 +26,14 @@ export async function create(request: http.Request, context: Context): Promise<m
 	else
 		await context.state.storage.put<model.Application>(
 			"data",
-			(result = { ...application, id: request.parameter.id, modified: isoly.DateTime.now() })
+			(result = {
+				...application,
+				id: request.parameter.id,
+				modified: isoly.DateTime.now(),
+				created: isoly.DateTime.now(),
+			})
 		)
+
 	return result
 }
 

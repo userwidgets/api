@@ -99,7 +99,11 @@ export class User {
 		)
 	}
 	async seed(user: model.User): Promise<model.User | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>("user/seed", user)
+		const response = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
+			"user/seed",
+			user
+		)
+		return response
 	}
 	async fetch(email: string): Promise<model.User | gracely.Error> {
 		return await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)

@@ -7,6 +7,7 @@ import * as password from "../password"
 import { router } from "../router"
 
 export async function seed(request: http.Request, context: Context) {
+	console.log("I AM SEEDING")
 	let result: model.User | gracely.Error
 	const user: model.User = await request.body
 	const current = await context.state.storage.get<model.User>("data")
@@ -25,4 +26,4 @@ export async function seed(request: http.Request, context: Context) {
 	}
 	return result
 }
-router.add("POST", "user/seed", seed)
+router.add("POST", "/user/seed", seed)

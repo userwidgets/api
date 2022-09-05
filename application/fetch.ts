@@ -6,7 +6,7 @@ import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.Application | gracely.Error
-	const key: model.User.Key | any = await context.authenticator.authenticate(request, "token")
+	const key = await context.authenticator.authenticate(request, "token")
 	if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else if (!key)
@@ -20,8 +20,16 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (!request.parameter.id)
 		result = gracely.client.invalidPathArgument("/application/:id", "id", "string", "")
 	else
-		result = await context.storage.application.fetch(request.parameter.id)
+		(result = await context.storage.application.fetch(key.audience)) &&
+			!gracely.Error.is(result) &&
+			!key.permissions["*"]?.application?.read &&
+			key.permissions["*"] &&
+			(result.permissions = result.permissions.filter(name => key.permissions["*"] && name in key.permissions["*"])) &&
+			(result.organizations = Object.fromEntries(
+				Object.entries(result.organizations).filter(([id, _]) => id in key.permissions)
+			))
+
 	return result
 }
 
-router.add("GET", "/application/:id", fetch)
+router.add("GET", "/application", fetch)

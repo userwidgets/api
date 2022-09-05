@@ -2,7 +2,6 @@ import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Context } from "../Context"
-import type { User } from "../Context/Storage/User"
 import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
@@ -30,35 +29,53 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = gracely.client.missingHeader("Application", "Application header required for this operation.")
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader("Application", "Application header should be a single value.")
+	else if (key == "admin")
+		(result = await context.storage.application.createOrganization(request.header.application, organization)) &&
+			!gracely.Error.is(result) &&
+			postProcess(result, context, request.header.application, href)
+	else if (!key.permissions["*"]?.application?.write)
+		result = gracely.client.unauthorized()
 	else {
 		const application = await context.storage.application.fetch(request.header.application)
-		if (!gracely.Error.is(application)) {
-			result = await context.storage.application.createOrganization(request.header.application, organization)
-			if (result && !gracely.Error.is(result)) {
-				const issuer = context.tager.createIssuer(request.header.application)
-				result.users.forEach(async email => {
-					const signable: model.User.Tag.Creatable = {
-						email: email,
-						active: gracely.Error.is(await (context.storage.user as User).fetch(email)) ? false : true,
-						permissions: {
-							"*": {
-								application: {},
-								organization: {},
-								user: {},
-							},
-							[(result as model.Organization).id]: Object.fromEntries(
-								organization.permissions.map(permission => [permission, { read: true, write: true }])
-							) as model.User.Permissions.Organization,
-						},
-					}
-					const tag = await issuer.sign(signable)
-					tag && context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`)
-				})
-			}
-		} else
-			result = application
+		gracely.Error.is(application)
+			? (result = application)
+			: (result = await context.storage.application.createOrganization(request.header.application, organization)) &&
+			  !gracely.Error.is(result) &&
+			  postProcess(result, context, request.header.application, href)
 	}
-
 	return result
 }
+
+function postProcess(
+	organization: model.Organization,
+	context: Context,
+	applicationId: string,
+	href: string
+): model.Organization {
+	console.log("started post process for:", organization.id)
+	const issuer = context.tager.createIssuer(applicationId)
+	organization.users.forEach(async email => {
+		const signable: model.User.Tag.Creatable = {
+			email: email,
+			active:
+				!gracely.Error.is(context.storage.user) && gracely.Error.is(await context.storage.user.fetch(email))
+					? false
+					: true,
+			permissions: {
+				"*": {
+					application: {},
+					organization: {},
+					user: {},
+				},
+				[organization.id]: Object.fromEntries(
+					organization.permissions.map(permission => [permission, { read: true, write: true }])
+				),
+			},
+		}
+		const tag = await issuer.sign(signable)
+		tag && context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`)
+	})
+	return organization
+}
+
 router.add("POST", "/organization", create)

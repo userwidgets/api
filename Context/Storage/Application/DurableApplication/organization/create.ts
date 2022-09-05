@@ -12,7 +12,7 @@ export async function create(
 	retries = 5
 ): Promise<model.Organization | gracely.Error> {
 	let result: model.Organization | gracely.Error
-	const organization: (model.Organization.Creatable & Record<"id", string>) | any = await request.body
+	const organization: (model.Organization.Creatable & Record<"id", string | undefined>) | any = await request.body
 	const id = cryptly.Identifier.generate(8)
 	const current = await context.state.storage.get<model.Application>("data")
 	if (!model.Organization.Creatable.is(organization))
@@ -27,7 +27,14 @@ export async function create(
 		result = await create(request, context, --retries)
 	else {
 		const now = isoly.DateTime.now()
-		current.organizations[id] = result = { ...organization, id: id, created: now, modified: now }
+		current.organizations[id] = result = {
+			name: organization.name,
+			permissions: organization.permissions,
+			id: id,
+			created: now,
+			modified: now,
+			users: organization.users.map(({ email }) => email),
+		}
 		await context.state.storage.put<model.Application>("data", current)
 	}
 	return result

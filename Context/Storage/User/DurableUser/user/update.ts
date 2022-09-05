@@ -33,18 +33,22 @@ export async function update(request: http.Request, context: Context) {
 								...current.permissions[tag.audience],
 								"*": {
 									application: {
-										read: permissions?.["*"].application.read || tag.permissions["*"].application.read ? true : false,
+										read:
+											permissions?.["*"]?.application?.read || tag.permissions["*"]?.application?.read ? true : false,
 										write:
-											permissions?.["*"].application.write || tag.permissions["*"].application.write ? true : false,
+											permissions?.["*"]?.application?.write || tag.permissions["*"]?.application?.write ? true : false,
 									},
 									organization: {
-										read: permissions?.["*"].organization.read || tag.permissions["*"].organization.read ? true : false,
+										read:
+											permissions?.["*"]?.organization?.read || tag.permissions["*"]?.organization?.read ? true : false,
 										write:
-											permissions?.["*"].organization.write || tag.permissions["*"].organization.write ? true : false,
+											permissions?.["*"]?.organization?.write || tag.permissions["*"]?.organization?.write
+												? true
+												: false,
 									},
 									user: {
-										read: permissions?.["*"].user.read || tag.permissions["*"].user.read ? true : false,
-										write: permissions?.["*"].user.write || tag.permissions["*"].user.write ? true : false,
+										read: permissions?.["*"]?.user?.read || tag.permissions["*"]?.user?.read ? true : false,
+										write: permissions?.["*"]?.user?.write || tag.permissions["*"]?.user?.write ? true : false,
 									},
 								},
 								...missing,

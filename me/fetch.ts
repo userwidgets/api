@@ -7,7 +7,6 @@ import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	const credentials = await context.authenticator.authenticate(request, "user")
-	console.log("me/fetch/credentials", credentials)
 	let result: authly.Token | gracely.Error
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user

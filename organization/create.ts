@@ -32,7 +32,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (key == "admin")
 		(result = await context.storage.application.createOrganization(request.header.application, organization)) &&
 			!gracely.Error.is(result) &&
-			postProcess(result, context, request.header.application, href)
+			postProcess(result.id, organization, context, request.header.application, href)
 	else if (!key.permissions["*"]?.application?.write)
 		result = gracely.client.unauthorized()
 	else {
@@ -41,20 +41,20 @@ export async function create(request: http.Request, context: Context): Promise<h
 			? (result = application)
 			: (result = await context.storage.application.createOrganization(request.header.application, organization)) &&
 			  !gracely.Error.is(result) &&
-			  postProcess(result, context, request.header.application, href)
+			  postProcess(result.id, organization, context, request.header.application, href)
 	}
 	return result
 }
 
 function postProcess(
-	organization: model.Organization,
+	organizationId: string,
+	organization: model.Organization.Creatable,
 	context: Context,
 	applicationId: string,
 	href: string
-): model.Organization {
-	console.log("started post process for:", organization.id)
+): void {
 	const issuer = context.tager.createIssuer(applicationId)
-	organization.users.forEach(async email => {
+	organization.users.forEach(async ({ email, permissions }) => {
 		const signable: model.User.Tag.Creatable = {
 			email: email,
 			active:
@@ -62,20 +62,16 @@ function postProcess(
 					? false
 					: true,
 			permissions: {
-				"*": {
-					application: {},
-					organization: {},
-					user: {},
-				},
-				[organization.id]: Object.fromEntries(
-					organization.permissions.map(permission => [permission, { read: true, write: true }])
-				),
+				...(permissions?.[0] && { "*": permissions[0] }),
+				[organizationId]: permissions?.[1]
+					? permissions[1]
+					: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
 			},
 		}
+		signable.permissions.asd?.user?.read
 		const tag = await issuer.sign(signable)
 		tag && context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`)
 	})
-	return organization
 }
 
 router.add("POST", "/organization", create)

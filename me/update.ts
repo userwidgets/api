@@ -7,7 +7,6 @@ import { router } from "../router"
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Result | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
-	console.log(key)
 	const tag = await context.tager.verifier.verify(request.parameter.tag)
 	if (!key || !tag || key.email != tag.email)
 		result = gracely.client.unauthorized()

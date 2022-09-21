@@ -11,6 +11,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = context.storage.application
 	else if (!key)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(key))
+		result = key
 	else if (!request.parameter.id)
 		result = gracely.client.invalidPathArgument("/organization/:id", "id", "string", "")
 	else
@@ -22,7 +24,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 				? result
 				: (result.permissions = result.permissions.filter(name => {
 						const permission = gracely.Error.is(result) ? undefined : key.permissions[result.id]
-						return permission && (name in permission || (key.permissions["*"] && name in key.permissions["*"]))
+						return (
+							(permission && (permission[name]?.read || permission[name]?.write)) ||
+							(key.permissions["*"] && (key.permissions["*"][name]?.read || key.permissions["*"][name]?.write))
+						)
 				  })) &&
 				  (result.users = [key.email]) &&
 				  result

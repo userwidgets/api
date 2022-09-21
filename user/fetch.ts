@@ -11,6 +11,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = context.storage.user
 	else if (!key)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(key))
+		result = key
 	else if (request.header.Application)
 		result = gracely.client.missingHeader("Application", "Must include Application for this resource.")
 	else if (typeof request.header.application != "string")

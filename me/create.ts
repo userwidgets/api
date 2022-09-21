@@ -7,14 +7,20 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Error
-	const tag = await context.tager.verifier.verify(request.parameter.tag)
-	const register: model.User.Credentials.Register | any = { ...(await request.body), user: tag?.email }
+	const tag = gracely.Error.is(context.tager.verifier)
+		? context.tager.verifier
+		: await context.tager.verifier.verify(request.parameter.tag)
+	const register: model.User.Credentials.Register | any = await request.body
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else if (!tag)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(tag))
+		result = tag
 	else if (!model.User.Credentials.Register.is(register))
 		result = gracely.client.malformedContent("User.Credentials.Register", "User.Credentials.Register", "")
+	else if (register.user != tag.email)
+		result = gracely.client.unauthorized()
 	else {
 		const response = await context.storage.user.create(tag.audience, {
 			email: tag.email,
@@ -23,7 +29,9 @@ export async function create(request: http.Request, context: Context): Promise<h
 			permissions: tag.permissions,
 		})
 		const issuer = context.authenticator.createIssuer(tag.audience)
-		result = gracely.Error.is(response)
+		result = gracely.Error.is(issuer)
+			? issuer
+			: gracely.Error.is(response)
 			? response
 			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}

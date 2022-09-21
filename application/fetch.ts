@@ -11,6 +11,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = context.storage.application
 	else if (!key)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(key))
+		result = key
 	else
 		(result = await context.storage.application.fetch(key.audience)) &&
 			!gracely.Error.is(result) &&

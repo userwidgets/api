@@ -11,6 +11,8 @@ export async function list(request: http.Request, context: Context): Promise<htt
 		result = context.storage.user
 	else if (!key)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(key))
+		result = key
 	else {
 		result =
 			(result = await context.storage.user.list(

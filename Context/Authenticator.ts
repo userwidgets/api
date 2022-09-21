@@ -1,48 +1,41 @@
+import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Environment } from "./Environment"
 
 export class Authenticator {
-	#issuer?: model.User.Key.Issuer
-	get issuer(): model.User.Key.Issuer {
-		return (
-			this.#issuer ??
-			(this.#issuer =
-				model.User.Key.isIssuer(this.environment.issuer) && this.environment.privateSecret
-					? model.User.Key.Signed.Issuer.create(this.environment.issuer, this.environment.privateSecret)
-					: this.environment.issuer
-					? model.User.Key.Unsigned.Issuer.create(this.environment.issuer)
-					: model.User.Key.Unsigned.Issuer.create("none"))
-		)
-	}
-	#verifier?: model.User.Key.Verifier
-	get verifier(): model.User.Key.Verifier {
+	#verifier?: model.User.Key.Verifier | gracely.Error
+	get verifier(): model.User.Key.Verifier | gracely.Error {
 		return (
 			this.#verifier ??
-			(this.#verifier = model.User.Key.isIssuer(this.environment.issuer)
-				? model.User.Key.Signed.Verifier.create(this.environment.issuer)
-				: model.User.Key.Unsigned.Verifier.create())
+			(this.#verifier = !this.environment.issuer
+				? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
+				: !model.User.Key.isIssuer(this.environment.issuer)
+				? gracely.server.misconfigured("issuer", "Configured issuer is not implemented.")
+				: model.User.Key.Verifier.create(this.environment.issuer))
 		)
 	}
 	constructor(public readonly environment: Environment) {}
-	createIssuer(audience: string) {
-		return model.User.Key.isIssuer(this.environment.issuer) && this.environment.privateSecret
-			? model.User.Key.Signed.Issuer.create(this.environment.issuer, this.environment.privateSecret, audience)
-			: this.environment.issuer
-			? model.User.Key.Unsigned.Issuer.create(this.environment.issuer, audience)
-			: model.User.Key.Unsigned.Issuer.create("none")
+	createIssuer(audience: string): model.User.Key.Issuer | gracely.Error {
+		return !this.environment.issuer
+			? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
+			: !model.User.Key.isIssuer(this.environment.issuer)
+			? gracely.server.misconfigured("issuer", "Configured issuer is not implemented.")
+			: !this.environment.privateSecret
+			? model.User.Key.Issuer.create(this.environment.issuer, audience)
+			: model.User.Key.Issuer.create(this.environment.issuer, audience, this.environment.privateSecret)
 	}
 	async authenticate(request: http.Request, method: "admin"): Promise<"admin" | undefined>
-	async authenticate(request: http.Request, method: "token"): Promise<model.User.Key | undefined>
+	async authenticate(request: http.Request, method: "token"): Promise<model.User.Key | undefined | gracely.Error>
 	async authenticate(request: http.Request, method: "user"): Promise<model.User.Credentials | undefined>
 	async authenticate(
 		request: http.Request,
 		...method: ("admin" | "token")[]
-	): Promise<"admin" | model.User.Key | undefined>
+	): Promise<"admin" | model.User.Key | undefined | gracely.Error>
 	async authenticate(
 		request: http.Request,
 		...method: ("token" | "user")[]
-	): Promise<model.User.Key | model.User.Credentials | undefined>
+	): Promise<model.User.Key | model.User.Credentials | undefined | gracely.Error>
 	async authenticate(
 		request: http.Request,
 		...method: ("admin" | "user")[]
@@ -50,13 +43,17 @@ export class Authenticator {
 	async authenticate(
 		request: http.Request,
 		...method: ("admin" | "token" | "user")[]
-	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined>
+	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined | gracely.Error>
 	async authenticate(
 		request: http.Request,
 		...method: ("admin" | "token" | "user")[]
-	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined> {
+	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined | gracely.Error> {
 		return (
-			(method.some(m => m == "token") ? await this.verifier.authenticate(request.header.authorization) : undefined) ??
+			(method.some(m => m == "token")
+				? gracely.Error.is(this.verifier)
+					? this.verifier
+					: await this.verifier.authenticate(request.header.authorization)
+				: undefined) ??
 			(method.some(m => m == "admin") &&
 			this.environment.adminSecret &&
 			request.header.authorization == `Basic ${this.environment.adminSecret}`

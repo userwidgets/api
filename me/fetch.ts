@@ -21,9 +21,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		const issuer = context.authenticator.createIssuer(request.header.application)
 		result = gracely.Error.is(response)
 			? response
+			: gracely.Error.is(issuer)
+			? issuer
 			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
-	console.log("me/fetch/result", result)
 	return result
 }
 

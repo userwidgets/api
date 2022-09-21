@@ -7,9 +7,14 @@ import { router } from "../router"
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Result | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
-	console.log(key)
-	const tag = await context.tager.verifier.verify(request.parameter.tag)
-	if (!key || !tag || key.email != tag.email)
+	const tag = gracely.Error.is(context.tager.verifier)
+		? context.tager.verifier
+		: await context.tager.verifier.verify(request.parameter.tag)
+	if (gracely.Error.is(tag))
+		result = tag
+	else if (gracely.Error.is(key))
+		result = key
+	else if (!key || !tag || key.email != tag.email)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
@@ -20,6 +25,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		const issuer = context.authenticator.createIssuer(tag.audience)
 		result = gracely.Error.is(response)
 			? response
+			: gracely.Error.is(issuer)
+			? issuer
 			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
 	return result

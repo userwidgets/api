@@ -11,18 +11,12 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = context.storage.application
 	else if (!key)
 		result = gracely.client.unauthorized()
-	else if (!request.header.application)
-		result = gracely.client.missingHeader("Application", "Must include Application for this resource.")
-	else if (typeof request.header.application != "string")
-		result = gracely.client.malformedHeader("Application", "expected Application value to be a string.")
-	else if (key.audience != request.header.application)
-		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(key))
+		result = key
 	else
 		result =
-			(result = await context.storage.application.listOrganizations(
-				request.header.application,
-				Object.keys(key.permissions)
-			)) && key.permissions["*"]?.organization?.read
+			(result = await context.storage.application.listOrganizations(key.audience, Object.keys(key.permissions))) &&
+			key.permissions["*"]?.organization?.read
 				? result
 				: gracely.Error.is(result)
 				? result
@@ -30,7 +24,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 						organization =>
 							(organization.permissions = organization.permissions.filter(name => {
 								const permission = key.permissions[organization.id]
-								return permission && (name in permission || (key.permissions["*"] && name in key.permissions["*"]))
+								return (
+									(permission && (permission[name]?.read || permission[name]?.write)) ||
+									(key.permissions["*"] && (key.permissions["*"][name]?.read || key.permissions["*"][name]?.write))
+								)
 							})) &&
 							(organization.users = [key.email]) &&
 							organization

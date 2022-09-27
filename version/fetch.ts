@@ -8,7 +8,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		name: data.name,
 		version: data.version,
 	}
-	if ((await context.authenticator.authenticate(request)) == "admin") {
+	if ((await context.authenticator.authenticate(request, "admin")) == "admin") {
 		result.environment = context.environment
 		result.dependencies = data.dependencies
 	}

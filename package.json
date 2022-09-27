@@ -46,6 +46,7 @@
     "login": "wrangler login",
     "transpile": "tsc --project tsconfig.test.json",
     "test:watch": "watch jest",
+		"publish": "wrangler publish --env production",
     "build": "rollup --config rollup.config.js",
     "build:local": "rollup --config rollup.dev.config.js",
     "start:wrangler": "wrangler dev --env wrangler",

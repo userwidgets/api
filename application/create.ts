@@ -7,7 +7,7 @@ import { router } from "../router"
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Error | model.Application
 	const application: model.Application.Creatable | any = await request.body
-	const admin = context.authenticator.authenticate(request, "admin")
+	const admin = await context.authenticator.authenticate(request, "admin")
 	if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else if (!model.Application.Creatable.is(application))

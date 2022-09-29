@@ -9,7 +9,7 @@ export class Application {
 		return await common.DurableObject.Client.open(this.applicationNamespace, id).get<model.Application>(`application`)
 	}
 
-	async create(application: model.Application.Creatable, ): Promise<model.Application | gracely.Error> {
+	async create(application: model.Application.Creatable): Promise<model.Application | gracely.Error> {
 		const id = cryptly.Identifier.generate(4)
 		const response = await common.DurableObject.Client.open(this.applicationNamespace, id).post<model.Application>(
 			`application/${id}`,
@@ -51,6 +51,16 @@ export class Application {
 		return gracely.Error.is(response)
 			? response
 			: response.filter(organization => organizationIds.includes(organization.id))
+	}
+	async updateOrganization(
+		applicationId: string,
+		organizationId: string,
+		users: string[]
+	): Promise<string[] | gracely.Error> {
+		return await common.DurableObject.Client.open(this.applicationNamespace, applicationId).patch<string[]>(
+			`organization/user/${organizationId}`,
+			users
+		)
 	}
 
 	static open(applicationNamespace?: DurableObjectNamespace): Application | gracely.Error {

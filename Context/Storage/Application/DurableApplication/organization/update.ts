@@ -17,10 +17,10 @@ export async function update(request: http.Request, context: Context): Promise<s
 			"/organization/user/:organizationId",
 			"organizationId",
 			"string",
-			"variable missing from url"
+			"organizationId is missing"
 		)
 	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
-		result = gracely.client.malformedContent("users[]", "users[]", "users[] where malformed")
+		result = gracely.client.malformedContent("string[]", "string[]", "string[] where malformed")
 	else {
 		const existing = new Set(application.organizations[request.parameter.organizationId].users)
 		const missing = users.filter(user => !existing.has(user))

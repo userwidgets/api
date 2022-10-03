@@ -13,9 +13,14 @@ export async function update(request: http.Request, context: Context): Promise<s
 	else if (!model.Application.is(application))
 		result = gracely.client.invalidContent("model.Organization", "The requested organization is invalid.")
 	else if (!request.parameter.organizationId)
-		result = gracely.client.invalidPathArgument("", "", "", "")
+		result = gracely.client.invalidPathArgument(
+			"/organization/user/:organizationId",
+			"organizationId",
+			"string",
+			"variable missing from url"
+		)
 	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
-		result = gracely.client.malformedContent("users", "users", "users where malformed")
+		result = gracely.client.malformedContent("users[]", "users[]", "users[] where malformed")
 	else {
 		const existing = new Set(application.organizations[request.parameter.organizationId].users)
 		const missing = users.filter(user => !existing.has(user))

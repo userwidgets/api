@@ -26,7 +26,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
 		result = key
-	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users)) 
+	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
 		result = gracely.client.invalidContent("email", "Request body invalid")
 	else if (!request.parameter.organizationId)
 		result = gracely.client.invalidPathArgument(
@@ -35,7 +35,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 			"string",
 			"variable missing from url"
 		)
-	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write) 
+	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write)
 		result = gracely.client.unauthorized()
 	else {
 		const emails = await context.storage.application.updateOrganization(

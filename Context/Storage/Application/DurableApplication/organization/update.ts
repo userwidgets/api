@@ -8,7 +8,6 @@ export async function update(request: http.Request, context: Context): Promise<s
 	let result: gracely.Error | string[]
 	const users: string[] | any = await request.body
 	const application = await context.state.storage.get<model.Application>("data")
-
 	if (!application)
 		result = gracely.client.notFound()
 	else if (!model.Application.is(application))
@@ -23,7 +22,6 @@ export async function update(request: http.Request, context: Context): Promise<s
 		application.organizations[request.parameter.organizationId].users.push(...(result = missing))
 		await context.state.storage.put("data", application)
 	}
-
 	return result
 }
 

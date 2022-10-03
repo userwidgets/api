@@ -2,14 +2,20 @@ import * as gracely from "gracely"
 // import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Context } from "../Context"
+import { User } from "../Context/Storage/User"
 import { router } from "../router"
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: gracely.Error | string[]
+	let result: gracely.Error | { email: string; tag: string }[]
 	const users: string[] | any = await request.body
 	const key = await context.authenticator.authenticate(request, "token")
 	let href: string | undefined
-
+	try {
+		const url = request.search.url ? new URL(request.search.url) : request.url
+		href = url.origin + url.pathname
+	} catch (_) {
+		href = request.url.origin
+	}
 	if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else if (gracely.Error.is(context.storage.user))
@@ -20,12 +26,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
 		result = key
-	else if (!request.header.application)
-		result = gracely.client.missingHeader("Application", "Application header required for this operation")
-	else if (typeof request.header.application != "string")
-		result = gracely.client.malformedHeader("Application", "Application header should be a string")
-	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
-		result = gracely.client.invalidContent("model.User[]", "Request body invalid")
+	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users)) 
+		result = gracely.client.invalidContent("email", "Request body invalid")
 	else if (!request.parameter.organizationId)
 		result = gracely.client.invalidPathArgument(
 			"/organization/user/:organizationId",
@@ -33,11 +35,38 @@ export async function update(request: http.Request, context: Context): Promise<h
 			"string",
 			"variable missing from url"
 		)
-	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write) {
+	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write) 
 		result = gracely.client.unauthorized()
-	} else {
-		result = await context.storage.application.updateOrganization(key.audience, request.parameter.organizationId, users) //need to implement in index.ts
+	else {
+		const emails = await context.storage.application.updateOrganization(
+			key.audience,
+			request.parameter.organizationId,
+			users
+		)
+
+		const issuer = context.tager.createIssuer(key.audience)
+		result = gracely.Error.is(issuer)
+			? issuer
+			: gracely.Error.is(emails)
+			? emails
+			: ((
+					await Promise.all(
+						emails.map(async email => ({
+							email: email,
+							tag: await issuer.sign({
+								email: email,
+								active: gracely.Error.is(await (context.storage.user as User).fetch(email)) ? false : true,
+								permissions: {
+									[request.parameter.organizationId as string]: {
+										user: { read: true, write: true },
+									},
+								},
+							}),
+						}))
+					)
+			  ).filter(({ tag }) => tag) as { email: string; tag: string }[])
 	}
+
 	return result
 }
 

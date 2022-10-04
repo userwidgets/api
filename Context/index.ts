@@ -29,7 +29,7 @@ export class Context {
 				body: {
 					personalizations: [
 						{
-							to: [recipient],
+							to: [{ email: recipient }],
 						},
 					],
 					from: {

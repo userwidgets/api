@@ -23,20 +23,18 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = gracely.client.invalidQueryArgument("url", "string", "Invalid url")
 	else if (!model.Organization.Creatable.is(organization))
 		result = gracely.client.invalidContent("model.Organization", "Request body invalid")
-	else if (!key)
-		result = gracely.client.unauthorized("Not authorized for this action on userwidgets organization")
 	else if (gracely.Error.is(key))
 		result = key
+	else if (!key || (key != "admin" && !key.permissions["*"]?.application?.write))
+		result = gracely.client.unauthorized(
+			`Not authorized for this action on userwidgets organization. Missing permissions. Received '${request.header.authorization}'`
+		)
 	else if (!request.header.application)
 		result = gracely.client.missingHeader("Application", "Application header required for this operation.")
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader(
 			"Application",
 			"Application header should be a single value. No authorization."
-		)
-	else if (key != "admin" && !key.permissions["*"]?.application?.write)
-		result = gracely.client.unauthorized(
-			"Not authorized for this action on userwidgets organization. Missing permissions."
 		)
 	else {
 		const issuer = context.tager.createIssuer(request.header.application)

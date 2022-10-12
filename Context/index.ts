@@ -52,7 +52,7 @@ export class Context {
 				},
 			})
 			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
-			result = [recipient, response]
+			result = [recipient, { status: response.status, body: await response.body, header: response.header }]
 		}
 		return result
 	}

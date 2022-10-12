@@ -20,11 +20,11 @@ export class Context {
 		content: string,
 		type = "text/plain",
 		dry_run = false
-	): Promise<gracely.Result | gracely.Error | Response> {
+	): Promise<[string, number]> {
 		// docs: https://api.mailchannels.net/tx/v1/documentation
-		let result: gracely.Result | gracely.Error
+		let result: [string, number]
 		if (!this.environment.email)
-			(result = gracely.success.noContent()) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
+			(result = [recipient, 202]) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
 		else {
 			const request = http.Request.create({
 				url: `https://api.mailchannels.net/tx/v1/send?${dry_run ? "dry_run=true" : ""}`,
@@ -51,7 +51,8 @@ export class Context {
 					],
 				},
 			})
-			result = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+			result = [recipient, response.status]
 		}
 		return result
 	}

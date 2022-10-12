@@ -5,7 +5,9 @@ import { Context } from "../Context"
 import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: gracely.Error | model.Organization
+	let result:
+		| gracely.Error
+		| { organization: model.Organization | gracely.Error; emails?: [string, number][] | gracely.Error }
 	const organization: model.Organization.Creatable | any = await request.body
 	const key = await context.authenticator.authenticate(request, "token", "admin")
 	let href: string | undefined
@@ -40,39 +42,48 @@ export async function create(request: http.Request, context: Context): Promise<h
 		const issuer = context.tager.createIssuer(request.header.application)
 		gracely.Error.is(issuer)
 			? (result = issuer)
-			: (result = await context.storage.application.createOrganization(request.header.application, organization)) &&
-			  !gracely.Error.is(result) &&
-			  postProcess(result.id, organization, context, href, issuer)
+			: (result = {
+					organization: await context.storage.application.createOrganization(request.header.application, organization),
+			  }) &&
+			  !gracely.Error.is(result.organization) &&
+			  (result.emails = await postProcess(result.organization.id, organization, context, href, issuer))
 	}
 	return result
 }
 
-function postProcess(
+async function postProcess(
 	organizationId: string,
 	organization: model.Organization.Creatable,
 	context: Context,
 	href: string,
 	issuer: model.User.Tag.Issuer
-): void {
-	!gracely.Error.is(issuer) &&
-		organization.users.forEach(async ({ email, permissions }) => {
-			const signable: model.User.Tag.Creatable = {
-				email: email,
-				active:
-					!gracely.Error.is(context.storage.user) && gracely.Error.is(await context.storage.user.fetch(email))
-						? false
-						: true,
-				permissions: {
-					...(permissions?.[0] && { "*": permissions[0] }),
-					[organizationId]: permissions?.[1]
-						? permissions[1]
-						: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
-				},
-			}
-			signable.permissions.asd?.user?.read
-			const tag = await issuer.sign(signable)
-			tag && context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`)
-		})
+): Promise<[string, number][] | gracely.Error> {
+	return gracely.Error.is(issuer)
+		? issuer
+		: await Promise.all(
+				organization.users.map(async ({ email, permissions }) => {
+					let result: [string, number] = [email, -1]
+					const signable: model.User.Tag.Creatable = {
+						email: email,
+						active:
+							!gracely.Error.is(context.storage.user) && gracely.Error.is(await context.storage.user.fetch(email))
+								? false
+								: true,
+						permissions: {
+							...(permissions?.[0] && { "*": permissions[0] }),
+							[organizationId]: permissions?.[1]
+								? permissions[1]
+								: Object.fromEntries(
+										organization.permissions.map(permission => [permission, { read: true, write: true }])
+								  ),
+						},
+					}
+					signable.permissions.asd?.user?.read
+					const tag = await issuer.sign(signable)
+					tag && (result = await context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`))
+					return result
+				})
+		  )
 }
 
 router.add("POST", "/organization", create)

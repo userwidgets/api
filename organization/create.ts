@@ -46,7 +46,14 @@ export async function create(request: http.Request, context: Context): Promise<h
 					organization: await context.storage.application.createOrganization(request.header.application, organization),
 			  }) &&
 			  !gracely.Error.is(result.organization) &&
-			  (result.emails = await postProcess(result.organization.id, organization, context, href, issuer))
+			  (result.emails = await postProcess(
+					result.organization.id,
+					organization,
+					context,
+					href,
+					issuer,
+					request.url.origin
+			  ))
 	}
 	return result
 }
@@ -56,7 +63,8 @@ async function postProcess(
 	organization: model.Organization.Creatable,
 	context: Context,
 	href: string,
-	issuer: model.User.Tag.Issuer
+	issuer: model.User.Tag.Issuer,
+	origin: string
 ): Promise<[string, Record<string, any>][] | gracely.Error> {
 	return gracely.Error.is(issuer)
 		? issuer
@@ -80,7 +88,12 @@ async function postProcess(
 					}
 					signable.permissions.asd?.user?.read
 					const tag = await issuer.sign(signable)
-					tag && (result = await context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`))
+					tag &&
+						(result = await context.email(
+							email,
+							`Invitation from ${organization.name}`,
+							`${href}?id=${tag}${origin.endsWith(".pages.dev") ? "&" + origin : ""}`
+						))
 					return result
 				})
 		  )

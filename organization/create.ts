@@ -7,7 +7,7 @@ import { router } from "../router"
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result:
 		| gracely.Error
-		| { organization: model.Organization | gracely.Error; emails?: [string, number][] | gracely.Error }
+		| { organization: model.Organization | gracely.Error; emails?: [string, Record<string, any>][] | gracely.Error }
 	const organization: model.Organization.Creatable | any = await request.body
 	const key = await context.authenticator.authenticate(request, "token", "admin")
 	let href: string | undefined
@@ -57,12 +57,12 @@ async function postProcess(
 	context: Context,
 	href: string,
 	issuer: model.User.Tag.Issuer
-): Promise<[string, number][] | gracely.Error> {
+): Promise<[string, Record<string, any>][] | gracely.Error> {
 	return gracely.Error.is(issuer)
 		? issuer
 		: await Promise.all(
 				organization.users.map(async ({ email, permissions }) => {
-					let result: [string, number] = [email, -1]
+					let result: [string, Record<string, any>] = [email, {}]
 					const signable: model.User.Tag.Creatable = {
 						email: email,
 						active:

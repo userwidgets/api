@@ -20,11 +20,11 @@ export class Context {
 		content: string,
 		type = "text/plain",
 		dry_run = false
-	): Promise<[string, number]> {
+	): Promise<[string, Record<string, any>]> {
 		// docs: https://api.mailchannels.net/tx/v1/documentation
-		let result: [string, number]
+		let result: [string, Record<string, any>]
 		if (!this.environment.email)
-			(result = [recipient, 202]) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
+			(result = [recipient, { status: 202 }]) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
 		else {
 			const request = http.Request.create({
 				url: `https://api.mailchannels.net/tx/v1/send?${dry_run ? "dry_run=true" : ""}`,
@@ -52,7 +52,7 @@ export class Context {
 				},
 			})
 			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
-			result = [recipient, response.status]
+			result = [recipient, response]
 		}
 		return result
 	}

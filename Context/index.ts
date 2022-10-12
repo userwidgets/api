@@ -14,14 +14,20 @@ export class Context {
 		readonly storage: Storage = new Storage(environment),
 		readonly tager: Tager = new Tager(environment)
 	) {}
-	async email(recipient: string, subject: string, content: string, type = "text/plain", dry_run = false) {
+	async email(
+		recipient: string,
+		subject: string,
+		content: string,
+		type = "text/plain",
+		dry_run = false
+	): Promise<[string, Record<string, any>]> {
 		// docs: https://api.mailchannels.net/tx/v1/documentation
-		let result: gracely.Result | gracely.Error
+		let result: [string, Record<string, any>]
 		if (!this.environment.email)
-			(result = gracely.success.noContent()) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
+			(result = [recipient, { status: 202 }]) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
 		else {
 			const request = http.Request.create({
-				url: `https://api.mailchannels.net/tx/v1/send?dry_run=${dry_run}`,
+				url: `https://api.mailchannels.net/tx/v1/send?${dry_run ? "dry_run=true" : ""}`,
 				method: "POST",
 				header: {
 					contentType: "application/json",
@@ -34,6 +40,7 @@ export class Context {
 					],
 					from: {
 						email: this.environment.email,
+						name: "testing",
 					},
 					subject: subject,
 					content: [
@@ -44,7 +51,8 @@ export class Context {
 					],
 				},
 			})
-			result = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+			result = [recipient, { status: response.status, body: await response.body, header: response.header }]
 		}
 		return result
 	}

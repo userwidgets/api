@@ -25,6 +25,12 @@ export class Context {
 		let result: [string, Record<string, any>]
 		if (!this.environment.email)
 			(result = [recipient, { status: 202 }]) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
+		else if (!this.environment.dkimDomain)
+			result = gracely.server.misconfigured("dkimDomain", "dkimDomain missing from configuration.")
+		else if (!this.environment.dkimSelector)
+			result = gracely.server.misconfigured("dkimSelector", "dkimSelector missing from configuration.")
+		else if (!this.environment.dkimPrivateKey)
+			result = gracely.server.misconfigured("dkimPrivateKey", "dkimPrivateKey missing from configuration.")
 		else {
 			const request = http.Request.create({
 				url: `https://api.mailchannels.net/tx/v1/send?${dry_run ? "dry_run=true" : ""}`,

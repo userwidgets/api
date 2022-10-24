@@ -6,4 +6,7 @@ export interface Environment extends Record<string, undefined | string | Durable
 	userNamespace?: DurableObjectNamespace
 	applicationNamespace?: DurableObjectNamespace
 	email?: string
+	dkimPrivateKey?: string
+	dkimDomain?: string
+	dkimSelector?: string
 }

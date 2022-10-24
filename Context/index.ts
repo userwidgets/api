@@ -20,11 +20,11 @@ export class Context {
 		content: string,
 		type = "text/plain",
 		dry_run = false
-	): Promise<[string, Record<string, any>]> {
+	): Promise<http.Response | gracely.Error | gracely.Result> {
 		// docs: https://api.mailchannels.net/tx/v1/documentation
-		let result: [string, Record<string, any>]
+		let result: http.Response | gracely.Error | gracely.Result
 		if (!this.environment.email)
-			(result = [recipient, { status: 202 }]) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
+			(result = { status: 202 }) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
 		else if (!this.environment.dkimDomain)
 			result = gracely.server.misconfigured("dkimDomain", "dkimDomain missing from configuration.")
 		else if (!this.environment.dkimSelector)
@@ -57,8 +57,7 @@ export class Context {
 					],
 				},
 			})
-			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
-			result = [recipient, { status: response.status, body: await response.body, header: response.header }]
+			result = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
 		}
 		return result
 	}

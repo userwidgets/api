@@ -4,29 +4,34 @@ import * as http from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
+type Emails = (
+	| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
+	| gracely.Error
+)[]
+
+type Response = {
+	organization: model.Organization | gracely.Error
+	emails?: Emails | gracely.Error
+}
+
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result:
-		| gracely.Error
-		| {
-				organization: model.Organization | gracely.Error
-				emails?:
-					| { user: string; tag?: string; response: http.Response | gracely.Error | gracely.Result }[]
-					| gracely.Error
-		  }
+	let result: gracely.Error | Response
 	const organization: model.Organization.Creatable | any = await request.body
 	const key = await context.authenticator.authenticate(request, "token", "admin")
-	let href: string | undefined
+	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
+	let url: URL | undefined
 	try {
-		const url = request.search.url ? new URL(request.search.url) : request.url
-		href = url.origin + url.pathname
+		url = request.search.url ? new URL(request.search.url) : request.url
 	} catch (_) {
-		href = request.url.origin
+		url = request.url
 	}
-	if (gracely.Error.is(context.storage.application))
+	if (url == request.url)
+		result = gracely.client.missingQueryArgument("url", "string", "Missing query argument for registration URL.")
+	else if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
-	else if (!href)
+	else if (!url)
 		result = gracely.client.invalidQueryArgument("url", "string", "Invalid url")
 	else if (!model.Organization.Creatable.is(organization))
 		result = gracely.client.invalidContent("model.Organization", "Request body invalid")
@@ -51,7 +56,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 					organization: await context.storage.application.createOrganization(request.header.application, organization),
 			  }) &&
 			  !gracely.Error.is(result.organization) &&
-			  (result.emails = await postProcess(result.organization.id, organization, context, href, issuer))
+			  (result.emails = await postProcess(result.organization.id, organization, context, url, issuer, sendEmail))
 	}
 	return result
 }
@@ -60,15 +65,15 @@ async function postProcess(
 	organizationId: string,
 	organization: model.Organization.Creatable,
 	context: Context,
-	href: string,
-	issuer: model.User.Tag.Issuer
-): Promise<{ user: string; tag?: string; response: http.Response | gracely.Error | gracely.Result }[]> {
+	url: URL,
+	issuer: model.User.Tag.Issuer,
+	sendEmail: boolean
+): Promise<Emails> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
-			let result: { user: string; tag?: string; response: http.Response | gracely.Error | gracely.Result } = {
-				user: email,
-				response: { status: 200 },
-			}
+			let result:
+				| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
+				| gracely.Error
 			const signable: model.User.Tag.Creatable = {
 				email: email,
 				active:
@@ -82,14 +87,23 @@ async function postProcess(
 						: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
 				},
 			}
-			signable.permissions.asd?.user?.read
 			const tag = await issuer.sign(signable)
-			tag &&
-				(result = {
+			if (!tag)
+				result = gracely.server.backendFailure("failed to sign.")
+			else {
+				url.searchParams.set("id", tag)
+				result = {
 					user: email,
 					tag: tag,
-					response: await context.email(email, `Invitation from ${organization.name}`, `${href}?id=${tag}`),
-				})
+					...(sendEmail && {
+						response: await context.email(
+							email,
+							`Invitation from ${organization.name}`,
+							`You have been invited to join ${organization.name} via ${url.host}. Click here to join ${url} (this invitation was sent via userwidgets)`
+						),
+					}),
+				}
+			}
 			return result
 		})
 	)

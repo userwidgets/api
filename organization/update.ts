@@ -5,29 +5,34 @@ import { Context } from "../Context"
 import { User } from "../Context/Storage/User"
 import { router } from "../router"
 
+type Emails = (
+	| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
+	| gracely.Error
+)[]
+
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: gracely.Error | { email: string; tag: string }[]
+	let result: Emails | gracely.Error
 	const users: string[] | any = await request.body
 	const key = await context.authenticator.authenticate(request, "token")
-	let href: string | undefined
+	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
+	let url: URL
 	try {
-		const url = request.search.url ? new URL(request.search.url) : request.url
-		href = url.origin + url.pathname
+		url = request.search.url ? new URL(request.search.url) : request.url
 	} catch (_) {
-		href = request.url.origin
+		url = request.url
 	}
 	if (gracely.Error.is(context.storage.application))
 		result = context.storage.application
 	else if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
-	else if (!href)
+	else if (request.url == url)
 		result = gracely.client.invalidQueryArgument("url", "string", "Invalid url")
 	else if (!key)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
 		result = key
 	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
-		result = gracely.client.invalidContent("email", "Request body invalid")
+		result = gracely.client.invalidContent("email", "Request body invalid.")
 	else if (!request.parameter.organizationId)
 		result = gracely.client.invalidPathArgument(
 			"/organization/user/:organizationId",
@@ -49,22 +54,39 @@ export async function update(request: http.Request, context: Context): Promise<h
 			? issuer
 			: gracely.Error.is(emails)
 			? emails
-			: ((
-					await Promise.all(
-						emails.map(async email => ({
+			: await Promise.all(
+					emails.map(async email => {
+						let result:
+							| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
+							| gracely.Error
+						const tag = await issuer.sign({
 							email: email,
-							tag: await issuer.sign({
-								email: email,
-								active: gracely.Error.is(await (context.storage.user as User).fetch(email)) ? false : true,
-								permissions: {
-									[request.parameter.organizationId as string]: {
-										user: { read: true, write: true },
-									},
+							active: gracely.Error.is(await (context.storage.user as User).fetch(email)) ? false : true,
+							permissions: {
+								[request.parameter.organizationId as string]: {
+									user: { read: true, write: true },
 								},
-							}),
-						}))
-					)
-			  ).filter(({ tag }) => tag) as { email: string; tag: string }[])
+							},
+						})
+						if (!tag)
+							result = gracely.server.backendFailure("failed to sign tag.")
+						else {
+							url.searchParams.set("id", tag)
+							result = {
+								user: email,
+								tag: tag,
+								...(sendEmail && {
+									response: await context.email(
+										email,
+										`You have been invited to join an organization.`,
+										`Invitation: ${url}`
+									),
+								}),
+							}
+						}
+						return result
+					})
+			  )
 	}
 
 	return result

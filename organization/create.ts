@@ -21,9 +21,9 @@ export async function create(request: http.Request, context: Context): Promise<h
 	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
 	let url: URL | undefined
 	try {
-		url = request.search.url ? new URL(request.search.url) : request.url
+		url = request.search.url ? new URL(request.search.url) : undefined
 	} catch (_) {
-		url = request.url
+		url = undefined
 	}
 	if (url == request.url)
 		result = gracely.client.missingQueryArgument("url", "string", "Missing query argument for registration URL.")

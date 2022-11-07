@@ -4,13 +4,9 @@ import * as http from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
-type Feedback =
-	| { email: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
-	| gracely.Error
-
 interface Response {
 	organization: model.Organization | gracely.Error
-	feedback?: Feedback[] | gracely.Error
+	feedback?: model.User.Feedback[] | gracely.Error
 }
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
@@ -67,10 +63,10 @@ async function postProcess(
 	url: URL,
 	issuer: model.User.Tag.Issuer,
 	sendEmail: boolean
-): Promise<Feedback[]> {
+): Promise<model.User.Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
-			let result: Feedback | gracely.Error
+			let result: model.User.Feedback | gracely.Error
 			const signable: model.User.Tag.Creatable = {
 				email: email,
 				active:

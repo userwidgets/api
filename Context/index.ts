@@ -46,7 +46,7 @@ export class Context {
 					],
 					from: {
 						email: this.environment.email,
-						name: "testing",
+						name: "Userwidgets",
 					},
 					subject: subject,
 					content: [

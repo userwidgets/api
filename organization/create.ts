@@ -99,7 +99,7 @@ async function postProcess(
 						response: await context.email(
 							email,
 							`Invitation from ${organization.name}`,
-							`You have been invited to join ${organization.name} via ${url.host}. Click here to join ${url} (this invitation was sent via userwidgets)`
+							`You have been invited to join ${organization.name} via ${url.host}. Click here to join ${url}`
 						),
 					}),
 				}

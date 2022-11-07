@@ -4,14 +4,13 @@ import * as http from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
-type Emails = (
-	| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
+type Feedback =
+	| { email: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
 	| gracely.Error
-)[]
 
-type Response = {
+interface Response {
 	organization: model.Organization | gracely.Error
-	emails?: Emails | gracely.Error
+	feedback?: Feedback[] | gracely.Error
 }
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
@@ -56,7 +55,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 					organization: await context.storage.application.createOrganization(request.header.application, organization),
 			  }) &&
 			  !gracely.Error.is(result.organization) &&
-			  (result.emails = await postProcess(result.organization.id, organization, context, url, issuer, sendEmail))
+			  (result.feedback = await postProcess(result.organization.id, organization, context, url, issuer, sendEmail))
 	}
 	return result
 }
@@ -68,12 +67,10 @@ async function postProcess(
 	url: URL,
 	issuer: model.User.Tag.Issuer,
 	sendEmail: boolean
-): Promise<Emails> {
+): Promise<Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
-			let result:
-				| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
-				| gracely.Error
+			let result: Feedback | gracely.Error
 			const signable: model.User.Tag.Creatable = {
 				email: email,
 				active:
@@ -93,7 +90,7 @@ async function postProcess(
 			else {
 				url.searchParams.set("id", tag)
 				result = {
-					user: email,
+					email: email,
 					tag: tag,
 					...(sendEmail && {
 						response: await context.email(

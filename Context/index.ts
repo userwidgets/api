@@ -46,7 +46,7 @@ export class Context {
 					],
 					from: {
 						email: this.environment.email,
-						name: "testing",
+						name: "Userwidgets",
 					},
 					subject: subject,
 					content: [
@@ -57,7 +57,8 @@ export class Context {
 					],
 				},
 			})
-			result = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+			result = { ...response, body: await response.body }
 		}
 		return result
 	}

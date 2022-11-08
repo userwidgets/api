@@ -1,18 +1,13 @@
 import * as gracely from "gracely"
-// import * as model from "@userwidgets/model"
+import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Context } from "../Context"
 import { User } from "../Context/Storage/User"
 import { router } from "../router"
 
-type Emails = (
-	| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
-	| gracely.Error
-)[]
-
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: Emails | gracely.Error
-	const users: string[] | any = await request.body
+	let result: model.User.Feedback.Invitation[] | gracely.Error
+	const emails: string[] | any = await request.body
 	const key = await context.authenticator.authenticate(request, "token")
 	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
 	let url: URL
@@ -31,7 +26,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
 		result = key
-	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
+	else if (!createIsArrayOf((value): value is string => typeof value == "string")(emails))
 		result = gracely.client.invalidContent("email", "Request body invalid.")
 	else if (!request.parameter.organizationId)
 		result = gracely.client.invalidPathArgument(
@@ -43,22 +38,21 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write)
 		result = gracely.client.unauthorized()
 	else {
-		const emails = await context.storage.application.updateOrganization(
+		const neophytes = await context.storage.application.updateOrganization(
 			key.audience,
 			request.parameter.organizationId,
-			users
+			emails
 		)
 
 		const issuer = context.tager.createIssuer(key.audience)
 		result = gracely.Error.is(issuer)
 			? issuer
-			: gracely.Error.is(emails)
-			? emails
+			: gracely.Error.is(neophytes)
+			? neophytes
 			: await Promise.all(
-					emails.map(async email => {
-						let result:
-							| { user: string; tag: string; response?: http.Response | gracely.Error | gracely.Result }
-							| gracely.Error
+					neophytes.map(async email => {
+						let result: model.User.Feedback.Invitation
+
 						const tag = await issuer.sign({
 							email: email,
 							active: gracely.Error.is(await (context.storage.user as User).fetch(email)) ? false : true,
@@ -73,7 +67,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 						else {
 							url.searchParams.set("id", tag)
 							result = {
-								user: email,
+								email: email,
 								tag: tag,
 								...(sendEmail && {
 									response: await context.email(

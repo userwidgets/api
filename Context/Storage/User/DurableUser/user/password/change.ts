@@ -37,7 +37,7 @@ export async function change(request: http.Request, context: Context): Promise<g
 	else if (entityTag != user.modified && entityTag != "*")
 		result = gracely.client.entityTagMismatch("Requested user have already changed.")
 	else {
-		const verifiedPassword = await password.verify(passwords.old, current, context.environment.hashSecret) //correct
+		const verifiedPassword = await password.verify(passwords.old, current, context.environment.hashSecret)
 		if (gracely.Error.is(verifiedPassword))
 			result = verifiedPassword
 		else if (!verifiedPassword)

@@ -48,3 +48,7 @@ durable_objects.bindings = [
 [[migrations]]
 tag = "0.0.1"
 new_classes = ["DurableApplication", "DurableUser"]
+
+# [[migrations]]
+# tag="clean"
+# deleted_classes = ["DurableApplication", "DurableUser"]

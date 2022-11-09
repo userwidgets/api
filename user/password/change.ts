@@ -9,7 +9,10 @@ export async function change(request: http.Request, context: Context): Promise<h
 	let result: gracely.Result | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
 	const passwords: model.User.Password.Change | any = await request.body
-	if (!request.parameter.email)
+	const entityTag = request.header.ifMatch?.at(0)
+	if (!entityTag)
+		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity tag.")
+	else if (!request.parameter.email)
 		result = gracely.client.invalidPathArgument("/user/:email", "email", "string", "Email address of valid user.")
 	else if (!model.User.Password.Change.is(passwords))
 		result = gracely.client.malformedContent(
@@ -34,7 +37,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	else if (key.expires > isoly.DateTime.now())
 		result = gracely.client.unauthorized("Token to close to expiring to change password.")
 	else
-		result = await context.storage.user.changePassword(key.email, passwords)
+		result = await context.storage.user.changePassword(key.email, passwords, entityTag)
 	return result
 }
 router.add("PUT", "/user/:email/password", change)

@@ -83,11 +83,13 @@ export class User {
 	}
 	async changePassword(
 		email: string,
-		passwordChange: model.User.Password.Change
+		passwordChange: model.User.Password.Change,
+		entityTag: string
 	): Promise<gracely.Result | gracely.Error> {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<"">(
 			"user/password",
-			passwordChange
+			passwordChange,
+			{ ifMatch: [entityTag] }
 		)
 		return response == "" ? gracely.success.noContent() : response
 	}

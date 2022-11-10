@@ -1,4 +1,5 @@
 import * as gracely from "gracely"
+import * as isoly from "isoly"
 import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Context } from "../../Context"
@@ -33,6 +34,8 @@ export async function change(request: http.Request, context: Context): Promise<h
 		result = key
 	else if (key.email != email)
 		result = result = gracely.client.unauthorized("Cant change name on another user.")
+	else if (key.issued > isoly.DateTime.nextMinute(isoly.DateTime.now(), -15))
+		result = gracely.client.unauthorized("Token to close to expiring to change password.")
 	else {
 		result = await context.storage.user.changeName(email, entityTag, names)
 	}

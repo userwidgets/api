@@ -35,7 +35,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	else if (key.email != email)
 		result = result = gracely.client.unauthorized("Cant change name on another user.")
 	else if (key.issued > isoly.DateTime.nextMinute(isoly.DateTime.now(), -15))
-		result = gracely.client.unauthorized("Token to close to expiring to change password.")
+		result = gracely.client.unauthorized("Token to close to expiring to change name.")
 	else {
 		result = await context.storage.user.changeName(email, entityTag, names)
 	}

@@ -104,12 +104,18 @@ export class User {
 		)
 		return response == "" ? gracely.success.noContent() : response
 	}
-	async changeName(email: string, entityTag: string, names: model.User.Name): Promise<model.User | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
+	async changeName(
+		applicationId: string,
+		email: string,
+		entityTag: string,
+		names: model.User.Name
+	): Promise<Required<model.User.Readable> | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
 			"/user/name",
 			names,
 			{ ifMatch: [entityTag] }
 		)
+		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	async updatePermissions(
 		applicationId: string,
@@ -132,8 +138,9 @@ export class User {
 		)
 		return response
 	}
-	async fetch(email: string): Promise<model.User | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)
+	async fetch(applicationId: string, email: string): Promise<Required<model.User.Readable> | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)
+		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	static open(
 		userNamespace?: DurableObjectNamespace,

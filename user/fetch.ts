@@ -5,7 +5,7 @@ import { Context } from "../Context"
 import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: model.User | gracely.Error
+	let result: model.User.Readable | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
 	if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
@@ -26,7 +26,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		)
 	else
 		result =
-			(result = await context.storage.user.fetch(request.parameter.email)) && key.permissions["*"]?.user?.read
+			(result = await context.storage.user.fetch(key.audience, request.parameter.email)) &&
+			key.permissions["*"]?.user?.read
 				? result
 				: gracely.Error.is(result) || result.email == key.email
 				? result

@@ -18,7 +18,11 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(tag))
 		result = tag
 	else if (!model.User.Credentials.Register.is(register))
-		result = gracely.client.malformedContent("User.Credentials.Register", "User.Credentials.Register", "")
+		result = gracely.client.malformedContent(
+			"User.Credentials.Register",
+			"User.Credentials.Register",
+			"A valid User.Credentials.Register is required to register a new user."
+		)
 	else if (register.user != tag.email)
 		result = gracely.client.unauthorized()
 	else {

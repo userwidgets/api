@@ -18,7 +18,7 @@ export async function create(request: http.Request, context: Context) {
 			"A valid User.Credentials object is required to create a new user."
 		)
 	else if (!request.header.application)
-		result = gracely.client.missingHeader("Application", "")
+		result = gracely.client.missingHeader("Application", "application header is required for this endpoint.")
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader("Application", "Only single value allowed.")
 	else if (current)

@@ -18,7 +18,12 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (typeof request.header.application != "string")
 		result = gracely.client.malformedHeader("Application", "expected Application value to be a string.")
 	else if (!request.parameter.email)
-		result = gracely.client.invalidPathArgument("/user/:email", "email", "string", "")
+		result = gracely.client.invalidPathArgument(
+			"/user/:email",
+			"email",
+			"string",
+			"email must be specified in the URL."
+		)
 	else
 		result =
 			(result = await context.storage.user.fetch(request.parameter.email)) && key.permissions["*"]?.user?.read

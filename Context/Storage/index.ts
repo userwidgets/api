@@ -10,7 +10,10 @@ export class Storage {
 		return this.#user ?? (this.#user = User.open(this.environment.userNamespace, this.environment.applicationNamespace))
 	}
 	get application(): Application | gracely.Error {
-		return this.#application ?? (this.#application = Application.open(this.environment.applicationNamespace))
+		return (
+			this.#application ??
+			(this.#application = Application.open(this.environment.applicationNamespace, this.environment.userNamespace))
+		)
 	}
 	constructor(private environment: Environment) {}
 }

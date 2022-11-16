@@ -21,7 +21,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else {
-		const response = await context.storage.user.patch(tag)
+		const response = await context.storage.user.update(tag)
 		const issuer = context.authenticator.createIssuer(tag.audience)
 		result = gracely.Error.is(response)
 			? response

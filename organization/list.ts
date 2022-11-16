@@ -21,16 +21,18 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 				: gracely.Error.is(result)
 				? result
 				: (result = result.map(
-						organization =>
+						organization => (
 							(organization.permissions = organization.permissions.filter(name => {
 								const permission = key.permissions[organization.id]
 								return (
 									(permission && (permission[name]?.read || permission[name]?.write)) ||
 									(key.permissions["*"] && (key.permissions["*"][name]?.read || key.permissions["*"][name]?.write))
 								)
-							})) &&
-							(organization.users = [key.email]) &&
+							})),
+							!key.permissions["*"]?.user?.read ||
+								(!key.permissions[organization.id] && (organization.users = [key.email])),
 							organization
+						)
 				  ))
 	return result
 }

@@ -12,15 +12,20 @@ export async function create(request: http.Request, context: Context): Promise<m
 	if (!current)
 		result = gracely.client.notFound("user not found.")
 	else if (!request.parameter.organizationId)
-		result = gracely.client.invalidPathArgument("", "", "", "")
+		result = gracely.client.invalidPathArgument(
+			"/user/permission/:organizationId",
+			"organizationId",
+			"string",
+			"organizationId is required for this request."
+		)
 	else if (!current.permissions[request.parameter.organizationId])
 		result = gracely.client.notFound("This user is not a member of this organization.")
 	else if (!entityTag)
-		result = gracely.client.missingHeader("", "")
+		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
 	else if (!isoly.DateTime.is(entityTag))
-		result = gracely.client.malformedHeader("", "")
-	else if (entityTag != "*" || entityTag >= current.modified)
-		result = gracely.client.entityTagMismatch("")
+		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
+	else if (entityTag != "*" && entityTag < current.modified)
+		result = gracely.client.entityTagMismatch("Requested user have already changed.")
 	else {
 		current.modified = isoly.DateTime.now()
 		current.permissions = (({ [request.parameter.organizationId]: _, ...permissions }) => permissions)(

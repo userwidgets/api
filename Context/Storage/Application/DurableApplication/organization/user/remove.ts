@@ -9,22 +9,32 @@ export async function remove(request: http.Request, context: Context): Promise<m
 	let result: model.Organization | gracely.Error
 	const entityTag = request.header.ifMatch?.at(0)
 	const current = await context.state.storage.get<model.Application>("data")
-	if (!current)
-		result = gracely.client.notFound("application not found.")
-	else if (!request.parameter.organizationId)
-		result = gracely.client.invalidPathArgument("", "", "", "")
+	if (!request.parameter.organizationId)
+		result = gracely.client.invalidPathArgument(
+			"/organization/:organizationId/user/:email",
+			"organizationId",
+			"string",
+			"organizationId is required for this request."
+		)
 	else if (!request.parameter.email)
-		result = gracely.client.invalidPathArgument("", "", "", "")
-	else if (!request.header.application)
-		result = gracely.client.missingHeader("", "")
-	else if (!entityTag)
-		result = gracely.client.missingHeader("", "")
-	else if (!isoly.DateTime.is(entityTag))
-		result = gracely.client.malformedHeader("", "")
+		result = gracely.client.invalidPathArgument(
+			"/organization/:organizationId/user/:email",
+			"email",
+			"string",
+			"email is required for this request."
+		)
+	else if (!current)
+		result = gracely.client.notFound("application not found.")
 	else if (!current.organizations[request.parameter.organizationId])
 		result = gracely.client.notFound("Organization does not exist on this application.")
-	else if (entityTag != "*" || entityTag >= current.organizations[request.parameter.organizationId].modified)
-		result = gracely.client.entityTagMismatch("")
+	else if (!request.header.application)
+		result = gracely.client.missingHeader("Application", "Application header is required for this request.")
+	else if (!entityTag)
+		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
+	else if (!isoly.DateTime.is(entityTag))
+		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
+	else if (entityTag != "*" && entityTag < current.organizations[request.parameter.organizationId].modified)
+		result = gracely.client.entityTagMismatch("Requested organization have already changed.")
 	else if (!current.organizations[request.parameter.organizationId].users.includes(request.parameter.email))
 		result = gracely.client.notFound("User is not a member of the organization.")
 	else {

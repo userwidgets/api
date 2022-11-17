@@ -1,3 +1,4 @@
+import "./user"
 import "./fetch"
 import "./list"
 import "./create"

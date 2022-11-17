@@ -29,7 +29,7 @@ export async function remove(request: http.Request, context: Context): Promise<h
 		)
 	else if (!entityTag)
 		result = gracely.client.missingHeader("If-Match", "Missing required header If-Match.")
-	else if (!isoly.DateTime.is(entityTag))
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
 		result = gracely.client.malformedHeader("If-Match", "If-Match header must be an isoly.DateTime")
 	else if (!key)
 		result = gracely.client.unauthorized()

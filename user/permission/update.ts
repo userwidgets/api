@@ -1,4 +1,5 @@
 import * as gracely from "gracely"
+import * as isoly from "isoly"
 import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Context } from "../../Context"
@@ -26,6 +27,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		)
 	else if (!entityTag)
 		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
+		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
 	else if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else if (!model.User.Permissions.Readable.is(permissions))

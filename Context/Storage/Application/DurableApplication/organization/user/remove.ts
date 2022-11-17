@@ -31,7 +31,7 @@ export async function remove(request: http.Request, context: Context): Promise<m
 		result = gracely.client.missingHeader("Application", "Application header is required for this request.")
 	else if (!entityTag)
 		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
-	else if (!isoly.DateTime.is(entityTag))
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
 		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
 	else if (entityTag != "*" && entityTag < current.organizations[request.parameter.organizationId].modified)
 		result = gracely.client.entityTagMismatch("Requested organization have already changed.")

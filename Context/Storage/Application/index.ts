@@ -56,7 +56,7 @@ export class Application {
 			),
 			common.DurableObject.Client.open(this.userNamespace, email).delete<model.User>(
 				`user/permission/${organizationId}`,
-				{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
+				{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
 			),
 		])
 		return { organization: organization, ...(gracely.Error.is(user) && { user: user }) }

@@ -5,7 +5,7 @@ import { Context } from "../Context"
 import { router } from "../router"
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: authly.Token | gracely.Result | gracely.Error
+	let result: authly.Token | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
 	const tag = gracely.Error.is(context.tager.verifier)
 		? context.tager.verifier

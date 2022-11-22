@@ -43,7 +43,6 @@ export async function update(request: http.Request, context: Context): Promise<h
 			request.parameter.organizationId,
 			emails
 		)
-
 		const issuer = context.tager.createIssuer(key.audience)
 		result = gracely.Error.is(issuer)
 			? issuer

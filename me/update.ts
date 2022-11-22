@@ -5,7 +5,7 @@ import { Context } from "../Context"
 import { router } from "../router"
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: authly.Token | gracely.Result | gracely.Error
+	let result: authly.Token | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
 	const tag = gracely.Error.is(context.tager.verifier)
 		? context.tager.verifier
@@ -21,7 +21,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.storage.user))
 		result = context.storage.user
 	else {
-		const response = await context.storage.user.patch(tag)
+		const response = await context.storage.user.update(tag)
 		const issuer = context.authenticator.createIssuer(tag.audience)
 		result = gracely.Error.is(response)
 			? response

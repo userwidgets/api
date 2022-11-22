@@ -34,7 +34,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 							(key.permissions["*"] && (key.permissions["*"][name]?.read || key.permissions["*"][name]?.write))
 						)
 				  })) &&
-				  (result.users = [key.email]) &&
+				  (result.users = result.users.includes(key.email) ? [key.email] : []) &&
 				  result
 	return result
 }

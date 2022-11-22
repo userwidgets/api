@@ -21,9 +21,9 @@ export async function update(request: http.Request, context: Context): Promise<m
 		result = gracely.client.notFound()
 	else if (!entityTag)
 		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
-	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
 		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
-	else if (entityTag != current.modified && entityTag != "*")
+	else if (entityTag != "*" && entityTag < current.modified)
 		result = gracely.client.entityTagMismatch("Requested user have already changed.")
 	else if (!model.User.Permissions.Readable.is(permissions))
 		result = gracely.client.malformedContent(

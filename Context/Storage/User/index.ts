@@ -30,7 +30,7 @@ export class User {
 		}
 		return result
 	}
-	async patch(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
+	async update(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
 		const user = await common.DurableObject.Client.open(this.userNamespace, tag.email).patch<model.User>("user", tag)
 		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
 			? user

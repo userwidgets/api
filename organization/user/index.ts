@@ -1,2 +1,1 @@
-import "./update"
 import "./remove"

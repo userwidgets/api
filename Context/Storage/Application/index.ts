@@ -4,7 +4,10 @@ import * as model from "@userwidgets/model"
 import * as common from "../../../common"
 
 export class Application {
-	private constructor(private readonly applicationNamespace: DurableObjectNamespace) {}
+	private constructor(
+		private readonly applicationNamespace: DurableObjectNamespace,
+		private readonly userNamespace: DurableObjectNamespace
+	) {}
 	async fetch(id: string): Promise<model.Application | gracely.Error> {
 		return await common.DurableObject.Client.open(this.applicationNamespace, id).get<model.Application>(`application`)
 	}
@@ -40,6 +43,24 @@ export class Application {
 			organization
 		)
 	}
+	async removeOrganizationUser(
+		applicationId: string,
+		organizationId: string,
+		email: string,
+		entityTag: string
+	): Promise<{ organization: model.Organization | gracely.Error; user?: gracely.Error }> {
+		const [organization, user] = await Promise.all([
+			common.DurableObject.Client.open(this.applicationNamespace, applicationId).delete<model.Organization>(
+				`organization/${organizationId}/user/${email}`,
+				{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
+			),
+			common.DurableObject.Client.open(this.userNamespace, email).delete<model.User>(
+				`user/permission/${organizationId}`,
+				{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
+			),
+		])
+		return { organization: organization, ...(gracely.Error.is(user) && { user: user }) }
+	}
 
 	async listOrganizations(
 		applicationId: string,
@@ -63,9 +84,14 @@ export class Application {
 		)
 	}
 
-	static open(applicationNamespace?: DurableObjectNamespace): Application | gracely.Error {
+	static open(
+		applicationNamespace?: DurableObjectNamespace,
+		userNamespace?: DurableObjectNamespace
+	): Application | gracely.Error {
 		return !applicationNamespace
 			? gracely.server.misconfigured("applicationNamespace", "Storage namespace missing.")
-			: applicationNamespace && new this(applicationNamespace)
+			: !userNamespace
+			? gracely.server.misconfigured("userNamespace", "Storage namespace missing.")
+			: new this(applicationNamespace, userNamespace)
 	}
 }

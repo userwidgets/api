@@ -8,38 +8,76 @@ export class User {
 		private readonly applicationNamespace: DurableObjectNamespace
 	) {}
 	async create(applicationId: string, user: model.User.Creatable): Promise<model.User.Key.Creatable | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
+		const created = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
 			"user",
 			user,
-			{
-				application: applicationId,
-				contentType: "application/json;charset=UTF-8",
-			}
+			{ application: applicationId, contentType: "application/json;charset=UTF-8" }
 		)
-		return gracely.Error.is(response)
-			? response
-			: model.User.toKey(response, applicationId) ?? gracely.client.notFound()
+		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(created)
+			? created
+			: model.User.toKey(created, applicationId) ?? gracely.client.notFound()
+		if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
+			const application = await common.DurableObject.Client.open(
+				this.applicationNamespace,
+				applicationId
+			).get<model.Application>("application")
+			gracely.Error.is(application)
+				? (result = application)
+				: (result.permissions = {
+						...Object.fromEntries(Object.keys(application.organizations).map(id => [id, {}])),
+						...result.permissions,
+				  })
+		}
+		return result
 	}
-	async patch(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, tag.email).patch<model.User>(
-			"user",
-			tag
-		)
-		return gracely.Error.is(response) ? response : model.User.toKey(response, tag.audience) ?? gracely.client.notFound()
+	async update(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
+		const user = await common.DurableObject.Client.open(this.userNamespace, tag.email).patch<model.User>("user", tag)
+		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
+			? user
+			: model.User.toKey(user, tag.audience) ?? gracely.client.notFound()
+		if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
+			const application = await common.DurableObject.Client.open(
+				this.applicationNamespace,
+				tag.audience
+			).get<model.Application>("application")
+			gracely.Error.is(application)
+				? (result = application)
+				: (result.permissions = {
+						...Object.fromEntries(Object.keys(application.organizations).map(id => [id, {}])),
+						...result.permissions,
+				  })
+		}
+		return result
 	}
 	async authenticate(
 		credentials: model.User.Credentials,
 		applicationId: string
 	): Promise<model.User.Key.Creatable | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, credentials.user).post<model.User>(
+		const user = await common.DurableObject.Client.open(this.userNamespace, credentials.user).post<model.User>(
 			"user/authenticate",
 			credentials
 		)
-		return gracely.Error.is(response)
-			? response
-			: model.User.toKey(response, applicationId) ?? gracely.client.notFound()
+		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
+			? user
+			: model.User.toKey(user, applicationId) ?? gracely.client.notFound()
+		if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
+			const application = await common.DurableObject.Client.open(
+				this.applicationNamespace,
+				applicationId
+			).get<model.Application>("application")
+			gracely.Error.is(application)
+				? (result = application)
+				: (result.permissions = {
+						...Object.fromEntries(Object.keys(application.organizations).map(id => [id, {}])),
+						...result.permissions,
+				  })
+		}
+		return result
 	}
-	async list(applicationId: string, organizationIds?: string[]): Promise<model.User[] | gracely.Error> {
+	async list(
+		applicationId: string,
+		organizationIds?: string[]
+	): Promise<Required<model.User.Readable[]> | gracely.Error> {
 		const response = await common.DurableObject.Client.open(
 			this.applicationNamespace,
 			applicationId
@@ -47,39 +85,49 @@ export class User {
 		return gracely.Error.is(response)
 			? response
 			: (
-					(
-						await Promise.all(
-							Array.from(
-								new Set(
-									Object.values(response.organizations)
-										.map(organization => organization.users)
-										.flat()
-								),
-								async email => await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>("user")
+					await Promise.all(
+						Array.from(
+							new Set(
+								Object.values(response.organizations)
+									.map(organization => organization.users)
+									.flat()
+							),
+							async email => await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>("user")
+						)
+					)
+			  )
+					.filter((response): response is model.User => model.User.is(response))
+					.reduce<Required<model.User.Readable>[]>((users, user) => {
+						const permissions = user.permissions[applicationId]
+						if (permissions)
+							if (!organizationIds)
+								users.push(
+									model.User.Readable.to(
+										{ ...user, permissions: { [applicationId]: user.permissions[applicationId] } },
+										applicationId
+									)
+								)
+							else if (
+								user.permissions[applicationId] &&
+								organizationIds.some(organizationId => permissions[organizationId])
 							)
-						)
-					).filter(response => !gracely.Error.is(response)) as model.User[]
-			  ).reduce<model.User[]>((users, user) => {
-					const permissions = user.permissions[applicationId]
-					if (permissions)
-						if (!organizationIds)
-							users.push({ ...user, permissions: { applicationId: user.permissions[applicationId] } })
-						else if (
-							user.permissions[applicationId] &&
-							organizationIds.some(organizationId => permissions[organizationId])
-						)
-							users.push({
-								...user,
-								permissions: {
-									applicationId: Object.fromEntries(
-										Object.entries(permissions).filter(
-											([organizationId, _]) => organizationIds.includes(organizationId) || organizationId == "*"
-										)
-									),
-								},
-							})
-					return users
-			  }, [])
+								users.push(
+									model.User.Readable.to(
+										{
+											...user,
+											permissions: {
+												[applicationId]: Object.fromEntries(
+													Object.entries(permissions).filter(
+														([organizationId, _]) => organizationIds.includes(organizationId) || organizationId == "*"
+													)
+												),
+											},
+										},
+										applicationId
+									)
+								)
+						return users
+					}, [])
 	}
 	async changePassword(
 		email: string,
@@ -93,12 +141,32 @@ export class User {
 		)
 		return response == "" ? gracely.success.noContent() : response
 	}
-	async changeName(email: string, entityTag: string, names: model.User.Name): Promise<model.User | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
+	async changeName(
+		applicationId: string,
+		email: string,
+		entityTag: string,
+		names: model.User.Name
+	): Promise<Required<model.User.Readable> | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
 			"/user/name",
 			names,
 			{ ifMatch: [entityTag] }
 		)
+		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
+	}
+	async updatePermissions(
+		applicationId: string,
+		organizationId: string,
+		email: string,
+		permissions: model.User.Permissions.Readable,
+		entityTag: string
+	): Promise<Required<model.User.Readable> | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, email).patch<Required<model.User>>(
+			`user/permission/${organizationId}`,
+			permissions,
+			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
+		)
+		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	async seed(user: model.User): Promise<model.User | gracely.Error> {
 		const response = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
@@ -107,8 +175,9 @@ export class User {
 		)
 		return response
 	}
-	async fetch(email: string): Promise<model.User | gracely.Error> {
-		return await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)
+	async fetch(applicationId: string, email: string): Promise<Required<model.User.Readable> | gracely.Error> {
+		const response = await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)
+		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	static open(
 		userNamespace?: DurableObjectNamespace,

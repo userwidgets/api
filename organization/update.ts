@@ -43,7 +43,6 @@ export async function update(request: http.Request, context: Context): Promise<h
 			request.parameter.organizationId,
 			emails
 		)
-
 		const issuer = context.tager.createIssuer(key.audience)
 		result = gracely.Error.is(issuer)
 			? issuer
@@ -55,7 +54,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 
 						const tag = await issuer.sign({
 							email: email,
-							active: gracely.Error.is(await (context.storage.user as User).fetch(email)) ? false : true,
+							active: gracely.Error.is(await (context.storage.user as User).fetch(key.audience, email)) ? false : true,
 							permissions: {
 								[request.parameter.organizationId as string]: {
 									user: { read: true, write: true },

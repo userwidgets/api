@@ -51,12 +51,21 @@ export async function create(request: http.Request, context: Context): Promise<h
 					organization: await context.storage.application.createOrganization(request.header.application, organization),
 			  }) &&
 			  !gracely.Error.is(result.organization) &&
-			  (result.feedback = await postProcess(result.organization.id, organization, context, url, issuer, sendEmail))
+			  (result.feedback = await postProcess(
+					request.header.application,
+					result.organization.id,
+					organization,
+					context,
+					url,
+					issuer,
+					sendEmail
+			  ))
 	}
 	return result
 }
 
 async function postProcess(
+	applicationId: string,
 	organizationId: string,
 	organization: model.Organization.Creatable,
 	context: Context,
@@ -70,7 +79,8 @@ async function postProcess(
 			const signable: model.User.Tag.Creatable = {
 				email: email,
 				active:
-					!gracely.Error.is(context.storage.user) && gracely.Error.is(await context.storage.user.fetch(email))
+					!gracely.Error.is(context.storage.user) &&
+					gracely.Error.is(await context.storage.user.fetch(applicationId, email))
 						? false
 						: true,
 				permissions: {

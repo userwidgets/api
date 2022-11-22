@@ -5,10 +5,15 @@ import { Context } from "../../../Context"
 import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<model.Organization | gracely.Error> {
-	return !request.parameter.id
-		? gracely.client.invalidPathArgument("/organization/:id", "id", "string", "")
-		: (await context.state.storage.get<model.Application>("data"))?.organizations[request.parameter.id] ??
+	return !request.parameter.organizationId
+		? gracely.client.invalidPathArgument(
+				"/organization/:id",
+				"id",
+				"string",
+				"organizationId must be specified in the URL."
+		  )
+		: (await context.state.storage.get<model.Application>("data"))?.organizations[request.parameter.organizationId] ??
 				gracely.client.notFound("that organization does not exist")
 }
 
-router.add("GET", "/organization/:id", fetch)
+router.add("GET", "/organization/:organizationId", fetch)

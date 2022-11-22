@@ -1,3 +1,4 @@
+import "./permission"
 import "./fetch"
 import "./create"
 import "./seed"

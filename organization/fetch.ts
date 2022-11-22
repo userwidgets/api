@@ -13,11 +13,16 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
 		result = key
-	else if (!request.parameter.id)
-		result = gracely.client.invalidPathArgument("/organization/:id", "id", "string", "")
+	else if (!request.parameter.organizationId)
+		result = gracely.client.invalidPathArgument(
+			"/organization/:id",
+			"id",
+			"string",
+			"organizationId must be specified in the URL."
+		)
 	else
 		result =
-			(result = await context.storage.application.fetchOrganization(key.audience, request.parameter.id)) &&
+			(result = await context.storage.application.fetchOrganization(key.audience, request.parameter.organizationId)) &&
 			key.permissions["*"]?.organization?.read
 				? result
 				: gracely.Error.is(result)
@@ -29,9 +34,9 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 							(key.permissions["*"] && (key.permissions["*"][name]?.read || key.permissions["*"][name]?.write))
 						)
 				  })) &&
-				  (result.users = [key.email]) &&
+				  (result.users = result.users.includes(key.email) ? [key.email] : []) &&
 				  result
 	return result
 }
 
-router.add("GET", "/organization/:id", fetch)
+router.add("GET", "/organization/:organizationId", fetch)

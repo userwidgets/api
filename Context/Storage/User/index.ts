@@ -137,7 +137,7 @@ export class User {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<"">(
 			"user/password",
 			passwordChange,
-			{ ifMatch: [entityTag] }
+			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
 		)
 		return response == "" ? gracely.success.noContent() : response
 	}
@@ -150,7 +150,7 @@ export class User {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
 			"/user/name",
 			names,
-			{ ifMatch: [entityTag] }
+			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
 		)
 		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}

@@ -148,7 +148,7 @@ export class User {
 		names: model.User.Name
 	): Promise<Required<model.User.Readable> | gracely.Error> {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
-			"/user/name",
+			"user/name",
 			names,
 			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
 		)

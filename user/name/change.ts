@@ -6,7 +6,7 @@ import { Context } from "../../Context"
 import { router } from "../../router"
 
 export async function change(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: model.User | gracely.Error
+	let result: model.User.Readable | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
 	const email = request.parameter.email
 	const names = await request.body
@@ -34,10 +34,10 @@ export async function change(request: http.Request, context: Context): Promise<h
 		result = key
 	else if (key.email != email)
 		result = result = gracely.client.unauthorized("Cant change name on another user.")
-	else if (key.issued > isoly.DateTime.nextMinute(isoly.DateTime.now(), -15))
+	else if (isoly.DateTime.epoch(isoly.DateTime.now()) - isoly.DateTime.epoch(key.issued) > 15 * 60)
 		result = gracely.client.unauthorized("Token to close to expiring to change name.")
 	else {
-		result = await context.storage.user.changeName(email, entityTag, names)
+		result = await context.storage.user.changeName(key.audience, email, entityTag, names)
 	}
 	return result
 }

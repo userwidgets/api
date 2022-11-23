@@ -34,7 +34,7 @@ export async function change(request: http.Request, context: Context): Promise<g
 		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
 	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
 		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
-	else if (entityTag != user.modified && entityTag != "*")
+	else if (entityTag != "*" && entityTag < user.modified)
 		result = gracely.client.entityTagMismatch("Requested user have already changed.")
 	else {
 		const verifiedPassword = await password.verify(passwords.old, current, context.environment.hashSecret)

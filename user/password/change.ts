@@ -12,6 +12,12 @@ export async function change(request: http.Request, context: Context): Promise<h
 	const entityTag = request.header.ifMatch?.at(0)
 	if (!entityTag)
 		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity tag.")
+	else if (entityTag != "*" || !isoly.DateTime.is(entityTag))
+		result = gracely.client.malformedContent(
+			"entityTag",
+			"entityTag",
+			"A valid entityTag is required to change a users name."
+		)
 	else if (!request.parameter.email)
 		result = gracely.client.invalidPathArgument("/user/:email", "email", "string", "Email address of valid user.")
 	else if (!model.User.Password.Change.is(passwords))
@@ -35,7 +41,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	else if (key.email != request.parameter.email)
 		result = gracely.client.unauthorized("Cant change password on another user.")
 	else if (isoly.DateTime.epoch(isoly.DateTime.now()) - isoly.DateTime.epoch(key.issued) > 15 * 60)
-		result = gracely.client.unauthorized("Token to close to expiring to change password.")
+		result = gracely.client.unauthorized("Session to close to expiring to change password.")
 	else
 		result = await context.storage.user.changePassword(key.email, passwords, entityTag)
 	return result

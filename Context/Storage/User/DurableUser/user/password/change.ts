@@ -10,7 +10,6 @@ import { router } from "../../router"
 export async function change(request: http.Request, context: Context): Promise<gracely.Result | gracely.Error> {
 	let result: gracely.Result | gracely.Error
 	const passwords: model.User.Password.Change = await request.body
-	context.state.id
 	const user = await context.state.storage.get<model.User>("data")
 	const current = await context.state.storage.get<cryptly.Password.Hash>("password")
 	const entityTag = request.header.ifMatch?.at(0)

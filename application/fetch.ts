@@ -17,12 +17,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		(result = await context.storage.application.fetch(key.audience)) &&
 			!gracely.Error.is(result) &&
 			!key.permissions["*"]?.application?.read &&
-			key.permissions["*"] &&
-			(result.permissions = result.permissions.filter(name => key.permissions["*"] && name in key.permissions["*"])) &&
+			((result.permissions = []),
 			(result.organizations = Object.fromEntries(
-				Object.entries(result.organizations).filter(([id, _]) => id in key.permissions)
-			))
-
+				Object.entries(result.organizations).filter(([id, _]) => key.permissions[id])
+			)))
 	return result
 }
 

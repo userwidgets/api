@@ -131,11 +131,13 @@ export class User {
 	}
 	async changePassword(
 		email: string,
-		passwordChange: model.User.Password.Change
+		passwordChange: model.User.Password.Change,
+		entityTag: string
 	): Promise<gracely.Result | gracely.Error> {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<"">(
 			"user/password",
-			passwordChange
+			passwordChange,
+			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
 		)
 		return response == "" ? gracely.success.noContent() : response
 	}
@@ -146,9 +148,9 @@ export class User {
 		names: model.User.Name
 	): Promise<Required<model.User.Readable> | gracely.Error> {
 		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
-			"/user/name",
+			"user/name",
 			names,
-			{ ifMatch: [entityTag] }
+			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
 		)
 		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}

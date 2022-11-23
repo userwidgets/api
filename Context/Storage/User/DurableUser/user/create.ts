@@ -36,9 +36,7 @@ export async function create(request: http.Request, context: Context) {
 					name: user.name,
 					email: user.email,
 					permissions: {
-						[request.header.application]: {
-							...user.permissions,
-						},
+						[request.header.application]: user.permissions,
 					},
 					created: now,
 					modified: now,

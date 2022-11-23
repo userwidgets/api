@@ -28,12 +28,8 @@ export async function change(request: http.Request, context: Context): Promise<h
 		result = context.storage.user
 	else if (!entityTag)
 		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity tag.")
-	else if (entityTag != "*" || !isoly.DateTime.is(entityTag))
-		result = gracely.client.malformedContent(
-			"entityTag",
-			"entityTag",
-			"A valid entityTag is required to change a users name."
-		)
+	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
+		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
 	else if (!key)
 		result = gracely.client.unauthorized("Failed to authorize request.")
 	else if (gracely.Error.is(key))

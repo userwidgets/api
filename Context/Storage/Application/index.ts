@@ -54,7 +54,7 @@ export class Application {
 				`organization/${organizationId}/user/${email}`,
 				{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
 			),
-			common.DurableObject.Client.open(this.userNamespace, email).delete<model.User>(
+			common.DurableObject.Client.open(this.userNamespace, email.toLowerCase()).delete<model.User>(
 				`user/permission/${organizationId}`,
 				{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
 			),

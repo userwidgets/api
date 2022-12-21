@@ -34,7 +34,7 @@ export async function create(request: http.Request, context: Context) {
 				"data",
 				(result = {
 					name: user.name,
-					email: user.email,
+					email: user.email.toLowerCase(),
 					permissions: {
 						[request.header.application]: user.permissions,
 					},

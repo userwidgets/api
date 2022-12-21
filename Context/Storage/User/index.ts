@@ -8,11 +8,10 @@ export class User {
 		private readonly applicationNamespace: DurableObjectNamespace
 	) {}
 	async create(applicationId: string, user: model.User.Creatable): Promise<model.User.Key.Creatable | gracely.Error> {
-		const created = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
-			"user",
-			user,
-			{ application: applicationId, contentType: "application/json;charset=UTF-8" }
-		)
+		const created = await common.DurableObject.Client.open(
+			this.userNamespace,
+			user.email.toLowerCase()
+		).post<model.User>("user", user, { application: applicationId, contentType: "application/json;charset=UTF-8" })
 		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(created)
 			? created
 			: model.User.toKey(created, applicationId) ?? gracely.client.notFound()
@@ -31,7 +30,10 @@ export class User {
 		return result
 	}
 	async update(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
-		const user = await common.DurableObject.Client.open(this.userNamespace, tag.email).patch<model.User>("user", tag)
+		const user = await common.DurableObject.Client.open(this.userNamespace, tag.email.toLowerCase()).patch<model.User>(
+			"user",
+			tag
+		)
 		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
 			? user
 			: model.User.toKey(user, tag.audience) ?? gracely.client.notFound()
@@ -53,10 +55,10 @@ export class User {
 		credentials: model.User.Credentials,
 		applicationId: string
 	): Promise<model.User.Key.Creatable | gracely.Error> {
-		const user = await common.DurableObject.Client.open(this.userNamespace, credentials.user).post<model.User>(
-			"user/authenticate",
-			credentials
-		)
+		const user = await common.DurableObject.Client.open(
+			this.userNamespace,
+			credentials.user.toLowerCase()
+		).post<model.User>("user/authenticate", credentials)
 		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
 			? user
 			: model.User.toKey(user, applicationId) ?? gracely.client.notFound()
@@ -92,7 +94,8 @@ export class User {
 									.map(organization => organization.users)
 									.flat()
 							),
-							async email => await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>("user")
+							async email =>
+								await common.DurableObject.Client.open(this.userNamespace, email.toLowerCase()).get<model.User>("user")
 						)
 					)
 			  )
@@ -134,7 +137,7 @@ export class User {
 		passwordChange: model.User.Password.Change,
 		entityTag: string
 	): Promise<gracely.Result | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<"">(
+		const response = await common.DurableObject.Client.open(this.userNamespace, email.toLowerCase()).put<"">(
 			"user/password",
 			passwordChange,
 			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
@@ -147,11 +150,9 @@ export class User {
 		entityTag: string,
 		names: model.User.Name
 	): Promise<Required<model.User.Readable> | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, email).put<model.User | gracely.Error>(
-			"user/name",
-			names,
-			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" }
-		)
+		const response = await common.DurableObject.Client.open(this.userNamespace, email.toLowerCase()).put<
+			model.User | gracely.Error
+		>("user/name", names, { ifMatch: [entityTag], contentType: "application/json;charset=UTF-8" })
 		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	async updatePermissions(
@@ -161,22 +162,26 @@ export class User {
 		permissions: model.User.Permissions.Readable,
 		entityTag: string
 	): Promise<Required<model.User.Readable> | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, email).patch<Required<model.User>>(
-			`user/permission/${organizationId}`,
-			permissions,
-			{ ifMatch: [entityTag], contentType: "application/json;charset=UTF-8", application: applicationId }
-		)
+		const response = await common.DurableObject.Client.open(this.userNamespace, email.toLowerCase()).patch<
+			Required<model.User>
+		>(`user/permission/${organizationId}`, permissions, {
+			ifMatch: [entityTag],
+			contentType: "application/json;charset=UTF-8",
+			application: applicationId,
+		})
 		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	async seed(user: model.User): Promise<model.User | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, user.email).post<model.User>(
-			"user/seed",
-			user
-		)
+		const response = await common.DurableObject.Client.open(
+			this.userNamespace,
+			user.email.toLowerCase()
+		).post<model.User>("user/seed", user)
 		return response
 	}
 	async fetch(applicationId: string, email: string): Promise<Required<model.User.Readable> | gracely.Error> {
-		const response = await common.DurableObject.Client.open(this.userNamespace, email).get<model.User>(`user`)
+		const response = await common.DurableObject.Client.open(this.userNamespace, email.toLowerCase()).get<model.User>(
+			`user`
+		)
 		return gracely.Error.is(response) ? response : model.User.Readable.to(response, applicationId)
 	}
 	static open(

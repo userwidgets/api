@@ -27,7 +27,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else {
 		const response = await context.storage.user.create(tag.audience, {
-			email: tag.email,
+			email: tag.email.toLowerCase(),
 			password: register.password,
 			name: register.name,
 			permissions: tag.permissions,

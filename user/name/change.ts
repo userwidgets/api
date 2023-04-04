@@ -24,8 +24,8 @@ export async function change(request: http.Request, context: Context): Promise<h
 			"User.NameChange",
 			"A valid User.NameChange object is required to change a users name."
 		)
-	else if (gracely.Error.is(context.storage.user))
-		result = context.storage.user
+	else if (gracely.Error.is(context.users))
+		result = context.users
 	else if (!entityTag)
 		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity tag.")
 	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
@@ -39,7 +39,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	else if (isoly.DateTime.epoch(isoly.DateTime.now()) - isoly.DateTime.epoch(key.issued) > 15 * 60)
 		result = gracely.client.unauthorized("Session to close to expiring to change name.")
 	else {
-		result = await context.storage.user.changeName(key.audience, email, entityTag, name)
+		result = await context.users.changeName(email, entityTag, name)
 	}
 	return result
 }

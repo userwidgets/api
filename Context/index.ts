@@ -1,19 +1,36 @@
 import * as gracely from "gracely"
-import { FormData } from "cloudly-formdata"
+// import { FormData } from "cloudly-formdata"
 import * as http from "cloudly-http"
 import { router } from "../router"
+import { Applications } from "./Applications"
 import { Authenticator } from "./Authenticator"
 import { Environment } from "./Environment"
-import { Storage } from "./Storage"
 import { Tager } from "./Tager"
+import { Users } from "./Users"
 
 export class Context {
-	constructor(
-		readonly environment: Environment,
-		readonly authenticator: Authenticator = new Authenticator(environment),
-		readonly storage: Storage = new Storage(environment),
-		readonly tager: Tager = new Tager(environment)
-	) {}
+	#referer?: string | false
+	get referer(): string | undefined {
+		try {
+			return (this.#referer ??= new URL(this.request.header.referer ?? "").hostname) || undefined
+		} catch (e) {
+			return (this.#referer ??= this.request.header.referer || false) || undefined
+		}
+	}
+	#applications?: Applications | gracely.Error
+	get applications(): Applications | gracely.Error {
+		return (this.#applications ??= Applications.open(this.environment, this.referer))
+	}
+	#users?: Users | gracely.Error
+	get users(): Users | gracely.Error {
+		return (this.#users ??= Users.open(this.environment, this.referer))
+	}
+	#authenticator?: Authenticator
+	get authenticator(): Authenticator {
+		return (this.#authenticator ??= Authenticator.open(this.environment, this.referer))
+	}
+	readonly tager = Tager.open(this.environment, this.referer)
+	constructor(readonly environment: Environment, readonly request: http.Request) {}
 	async email(
 		recipient: string,
 		subject: string,
@@ -66,7 +83,8 @@ export class Context {
 	static async handle(request: Request, environment: Environment): Promise<Response> {
 		let result: http.Response
 		try {
-			result = await router.handle(http.Request.from(request), new Context(environment))
+			const httpRequest = http.Request.from(request)
+			result = await router.handle(httpRequest, new Context(environment, httpRequest))
 		} catch (e) {
 			const details = (typeof e == "object" && e && e.toString()) || undefined
 			result = http.Response.create(gracely.server.unknown(details, "exception"))
@@ -75,15 +93,15 @@ export class Context {
 	}
 }
 
-http.Parser.add(
-	async request =>
-		Object.fromEntries(
-			(
-				await FormData.parse(
-					new Uint8Array(await request.arrayBuffer()),
-					request.headers.get("Content-Type") ?? "multipart/form-data"
-				)
-			).entries()
-		),
-	"multipart/form-data"
-)
+// http.Parser.add(
+// 	async request =>
+// 		Object.fromEntries(
+// 			(
+// 				await FormData.parse(
+// 					new Uint8Array(await request.arrayBuffer()),
+// 					request.headers.get("Content-Type") ?? "multipart/form-data"
+// 				)
+// 			).entries()
+// 		),
+// 	"multipart/form-data"
+// )

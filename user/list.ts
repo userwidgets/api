@@ -7,17 +7,14 @@ import { router } from "../router"
 export async function list(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.User.Readable[] | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
-	if (gracely.Error.is(context.storage.user))
-		result = context.storage.user
+	if (gracely.Error.is(context.users))
+		result = context.users
 	else if (!key)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
 		result = key
 	else {
-		const response = await context.storage.user.list(
-			key.audience,
-			Object.keys((({ "*": app, ...org }) => org)(key.permissions))
-		)
+		const response = await context.users.list(Object.keys((({ "*": app, ...org }) => org)(key.permissions)))
 		result = gracely.Error.is(response)
 			? response
 			: key.permissions["*"]?.user?.read

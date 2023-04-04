@@ -29,8 +29,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
 	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
 		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
-	else if (gracely.Error.is(context.storage.user))
-		result = context.storage.user
+	else if (gracely.Error.is(context.users))
+		result = context.users
 	else if (!model.User.Permissions.Readable.is(permissions))
 		result = gracely.client.malformedContent(
 			"User.Permissions.Readable",
@@ -44,8 +44,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (!model.User.Permissions.Readable.allowUpdate(key, permissions))
 		result = gracely.client.unauthorized("forbidden")
 	else {
-		const response = await context.storage.user.updatePermissions(
-			key.audience,
+		const response = await context.users.updatePermissions(
 			request.parameter.organizationId,
 			request.parameter.email,
 			permissions,

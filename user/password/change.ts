@@ -28,8 +28,8 @@ export async function change(request: http.Request, context: Context): Promise<h
 			"User.Password.Change",
 			"A valid User.Password.Change object is required to change a users password"
 		)
-	else if (gracely.Error.is(context.storage.user))
-		result = context.storage.user
+	else if (gracely.Error.is(context.users))
+		result = context.users
 	else if (!key)
 		result = gracely.client.unauthorized("Failed to authorize request.")
 	else if (gracely.Error.is(key))
@@ -39,7 +39,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	else if (isoly.DateTime.epoch(isoly.DateTime.now()) - isoly.DateTime.epoch(key.issued) > 15 * 60)
 		result = gracely.client.unauthorized("Session to close to expiring to change password.")
 	else
-		result = await context.storage.user.changePassword(key.email, passwords, entityTag)
+		result = await context.users.changePassword(key.email, passwords, entityTag)
 	return result
 }
 router.add("PUT", "/user/:email/password", change)

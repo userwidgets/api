@@ -7,8 +7,8 @@ import { router } from "../router"
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.Organization | gracely.Error
 	const key = await context.authenticator.authenticate(request, "token")
-	if (gracely.Error.is(context.storage.application))
-		result = context.storage.application
+	if (gracely.Error.is(context.applications))
+		result = context.applications
 	else if (!key)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(key))
@@ -22,7 +22,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		)
 	else
 		result =
-			(result = await context.storage.application.fetchOrganization(key.audience, request.parameter.organizationId)) &&
+			(result = await context.applications.fetchOrganization(request.parameter.organizationId)) &&
 			key.permissions["*"]?.organization?.read
 				? result
 				: gracely.Error.is(result)

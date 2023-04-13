@@ -57,7 +57,7 @@ export async function update(request: http.Request, context: Context) {
 						modified: isoly.DateTime.now(),
 					})
 			  )
-			: (result = gracely.client.invalidContent("permissions", "You have already joined this organization."))
+			: (result = { status: 410, type: "gone", error: "You have already joined this organization." })
 	}
 	return result
 }

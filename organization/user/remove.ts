@@ -11,8 +11,8 @@ export async function remove(request: http.Request, context: Context): Promise<h
 	const entityTag = request.header.ifMatch?.at(0)
 	if (gracely.Error.is(key))
 		result = key
-	else if (gracely.Error.is(context.storage.application))
-		result = context.storage.application
+	else if (gracely.Error.is(context.applications))
+		result = context.applications
 	else if (!request.parameter.organizationId)
 		result = gracely.client.invalidPathArgument(
 			"/organization/:organizationId/user/:email",
@@ -34,8 +34,7 @@ export async function remove(request: http.Request, context: Context): Promise<h
 	else if (!key)
 		result = gracely.client.unauthorized()
 	else {
-		result = await context.storage.application.removeOrganizationUser(
-			key.audience,
+		result = await context.applications.removeOrganizationUser(
 			request.parameter.organizationId,
 			request.parameter.email,
 			entityTag

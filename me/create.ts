@@ -11,8 +11,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 		? context.tager.verifier
 		: await context.tager.verifier.verify(request.parameter.tag)
 	const register: model.User.Credentials.Register | any = await request.body
-	if (gracely.Error.is(context.storage.user))
-		result = context.storage.user
+	if (gracely.Error.is(context.users))
+		result = context.users
 	else if (!tag)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(tag))
@@ -25,19 +25,19 @@ export async function create(request: http.Request, context: Context): Promise<h
 		)
 	else if (register.user != tag.email)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(context.authenticator.issuer))
+		result = context.authenticator.issuer
 	else {
-		const response = await context.storage.user.create(tag.audience, {
+		const response = await context.users.create({
 			email: tag.email,
 			password: register.password,
 			name: register.name,
 			permissions: tag.permissions,
 		})
-		const issuer = context.authenticator.createIssuer(tag.audience)
-		result = gracely.Error.is(issuer)
-			? issuer
-			: gracely.Error.is(response)
+		result = gracely.Error.is(response)
 			? response
-			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
+			: (await context.authenticator.issuer.sign(response)) ??
+			  gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
 	return result
 }

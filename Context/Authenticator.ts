@@ -15,16 +15,19 @@ export class Authenticator {
 				: model.User.Key.Verifier.create(this.environment.issuer))
 		)
 	}
-	constructor(public readonly environment: Environment) {}
-	createIssuer(audience: string): model.User.Key.Issuer | gracely.Error {
-		return !this.environment.issuer
+	#issuer?: model.User.Key.Issuer | gracely.Error
+	get issuer(): model.User.Key.Issuer | gracely.Error {
+		return (this.#issuer ??= !this.referer
+			? gracely.client.missingHeader("Referer", "Referer required.")
+			: !this.environment.issuer
 			? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
 			: !model.User.Key.isIssuer(this.environment.issuer)
 			? gracely.server.misconfigured("issuer", "Configured issuer is not implemented.")
 			: !this.environment.privateSecret
-			? model.User.Key.Issuer.create(this.environment.issuer, audience)
-			: model.User.Key.Issuer.create(this.environment.issuer, audience, this.environment.privateSecret)
+			? model.User.Key.Issuer.create(this.environment.issuer, this.referer)
+			: model.User.Key.Issuer.create(this.environment.issuer, this.referer, this.environment.privateSecret))
 	}
+	private constructor(private readonly environment: Environment, private readonly referer: string | undefined) {}
 	async authenticate(request: http.Request, method: "admin"): Promise<"admin" | undefined>
 	async authenticate(request: http.Request, method: "token"): Promise<model.User.Key | undefined | gracely.Error>
 	async authenticate(request: http.Request, method: "user"): Promise<model.User.Credentials | undefined>
@@ -52,7 +55,9 @@ export class Authenticator {
 			(method.some(m => m == "token")
 				? gracely.Error.is(this.verifier)
 					? this.verifier
-					: await this.verifier.authenticate(request.header.authorization)
+					: (key => (key?.audience != this.referer ? undefined : key))(
+							await this.verifier.authenticate(request.header.authorization)
+					  )
 				: undefined) ??
 			(method.some(m => m == "admin") &&
 			this.environment.adminSecret &&
@@ -62,5 +67,8 @@ export class Authenticator {
 				? model.User.Credentials.fromBasic(request.header.authorization)
 				: undefined)
 		)
+	}
+	static open(environment: Environment, referer: string | undefined): Authenticator {
+		return new this(environment, referer)
 	}
 }

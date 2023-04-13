@@ -2,7 +2,6 @@ import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
 import { Context } from "../Context"
-import { User } from "../Context/Storage/User"
 import { router } from "../router"
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
@@ -16,10 +15,10 @@ export async function update(request: http.Request, context: Context): Promise<h
 	} catch (_) {
 		url = request.url
 	}
-	if (gracely.Error.is(context.storage.application))
-		result = context.storage.application
-	else if (gracely.Error.is(context.storage.user))
-		result = context.storage.user
+	if (gracely.Error.is(context.applications))
+		result = context.applications
+	else if (gracely.Error.is(context.users))
+		result = context.users
 	else if (request.url == url)
 		result = gracely.client.invalidQueryArgument("url", "string", "Invalid url")
 	else if (!key)
@@ -37,26 +36,23 @@ export async function update(request: http.Request, context: Context): Promise<h
 		)
 	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(context.tager.issuer))
+		result = context.tager.issuer
 	else {
-		const neophytes = await context.storage.application.updateOrganization(
-			key.audience,
-			request.parameter.organizationId,
-			emails
-		)
-		const issuer = context.tager.createIssuer(key.audience)
-		result = gracely.Error.is(issuer)
-			? issuer
-			: gracely.Error.is(neophytes)
+		const organizationId = request.parameter.organizationId
+		const issuer = context.tager.issuer
+		const users = context.users
+		const neophytes = await context.applications.updateOrganization(request.parameter.organizationId, emails)
+		result = gracely.Error.is(neophytes)
 			? neophytes
 			: await Promise.all(
 					neophytes.map(async email => {
 						let result: model.User.Feedback.Invitation
-
 						const tag = await issuer.sign({
 							email: email,
-							active: gracely.Error.is(await (context.storage.user as User).fetch(key.audience, email)) ? false : true,
+							active: gracely.Error.is(await users.fetch(email)) ? false : true,
 							permissions: {
-								[request.parameter.organizationId as string]: {
+								[organizationId]: {
 									user: { read: true, write: true },
 								},
 							},

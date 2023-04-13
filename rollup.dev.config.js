@@ -14,7 +14,7 @@ export default [{
 			format: "es",
 			file: "dist/_worker.mjs",
 			sourcemap: true,
-			sourcemapPathTransform: (relativeSourcePath, _) => path.resolve(__dirname, relativeSourcePath.replace(/^(..\/)+/, ""))
+			sourcemapPathTransform: (relativeSourcePath, _) => path.resolve(__dirname, relativeSourcePath.replace(/^(\.\.\/)+/, ""))
 		},
 		plugins: [commonjs(), nodeResolve({ browser: true }), typescript({ tsconfig: "./tsconfig.json" }), json()],
 		watch: {

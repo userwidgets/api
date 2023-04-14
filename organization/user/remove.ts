@@ -7,7 +7,9 @@ import { router } from "../../router"
 
 export async function remove(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: { organization: model.Organization | gracely.Error; user?: gracely.Error } | gracely.Error
-	const key = await context.authenticator.authenticate(request, "token")
+	const key = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token")
 	const entityTag = request.header.ifMatch?.at(0)
 	if (gracely.Error.is(key))
 		result = key

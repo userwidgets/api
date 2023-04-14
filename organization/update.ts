@@ -7,7 +7,9 @@ import { router } from "../router"
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.User.Feedback.Invitation[] | gracely.Error
 	const emails: string[] | any = await request.body
-	const key = await context.authenticator.authenticate(request, "token")
+	const key = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token")
 	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
 	let url: URL
 	try {
@@ -36,6 +38,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		)
 	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write)
 		result = gracely.client.unauthorized()
+	else if (gracely.Error.is(context.tager))
+		result = context.tager
 	else if (gracely.Error.is(context.tager.issuer))
 		result = context.tager.issuer
 	else {

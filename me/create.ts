@@ -7,9 +7,7 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Error
-	const tag = gracely.Error.is(context.tager.verifier)
-		? context.tager.verifier
-		: await context.tager.verifier.verify(request.parameter.tag)
+	const tag = gracely.Error.is(context.tager) ? context.tager : await context.tager.verify(request.parameter.tag)
 	const register: model.User.Credentials.Register | any = await request.body
 	if (gracely.Error.is(context.users))
 		result = context.users
@@ -23,6 +21,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 			"User.Credentials.Register",
 			"A valid User.Credentials.Register is required to register a new user."
 		)
+	else if (gracely.Error.is(context.authenticator))
+		result = context.authenticator
 	else if (register.user != tag.email)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.authenticator.issuer))

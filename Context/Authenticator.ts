@@ -55,7 +55,7 @@ export class Authenticator {
 					? this.verifier
 					: await this.verifier
 							.authenticate(request.header.authorization)
-							.then(key => (key?.audience == this.referer ? undefined : key))
+							.then(key => (key?.audience != this.referer ? undefined : key))
 				: undefined) ??
 			(method.some(m => m == "admin") &&
 			this.environment.adminSecret &&

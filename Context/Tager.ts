@@ -4,7 +4,7 @@ import { Environment } from "./Environment"
 
 export class Tager {
 	#verifier?: model.User.Tag.Verifier | gracely.Error
-	get verifier(): model.User.Tag.Verifier | gracely.Error {
+	private get verifier(): model.User.Tag.Verifier | gracely.Error {
 		return (
 			this.#verifier ??
 			(this.#verifier = !this.environment.issuer
@@ -26,11 +26,16 @@ export class Tager {
 			? model.User.Tag.Issuer.create(this.environment.issuer, this.referer)
 			: model.User.Tag.Issuer.create(this.environment.issuer, this.referer, this.environment.privateSecret))
 	}
-	private constructor(public readonly environment: Environment, private readonly referer: string | undefined) {}
+	private constructor(public readonly environment: Environment, private readonly referer: string) {}
+	async verify(tag: string | undefined): Promise<model.User.Tag | gracely.Error | undefined> {
+		return gracely.Error.is(this.verifier)
+			? this.verifier
+			: await this.verifier.verify(tag).then(tag => (tag?.audience != this.referer ? undefined : tag))
+	}
 	async tag(token: string, ...audience: string[]): Promise<model.User.Tag | undefined | gracely.Error> {
 		return gracely.Error.is(this.verifier) ? this.verifier : await this.verifier.verify(token, ...audience)
 	}
-	static open(environment: Environment, referer: string | undefined): Tager {
-		return new this(environment, referer)
+	static open(environment: Environment, referer: string | undefined): Tager | gracely.Error {
+		return !referer ? gracely.client.missingHeader("Referer", "Referer required.") : new this(environment, referer)
 	}
 }

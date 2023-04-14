@@ -7,7 +7,9 @@ import { router } from "../../router"
 
 export async function change(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.User.Readable | gracely.Error
-	const key = await context.authenticator.authenticate(request, "token")
+	const key = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token")
 	const email = request.parameter.email
 	const name = await request.body
 	const entityTag = request.header.ifMatch?.at(0)

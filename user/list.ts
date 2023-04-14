@@ -6,7 +6,9 @@ import { router } from "../router"
 
 export async function list(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.User.Readable[] | gracely.Error
-	const key = await context.authenticator.authenticate(request, "token")
+	const key = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token")
 	if (gracely.Error.is(context.users))
 		result = context.users
 	else if (!key)

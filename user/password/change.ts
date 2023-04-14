@@ -7,7 +7,9 @@ import { router } from "../../router"
 
 export async function change(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Result | gracely.Error
-	const key = await context.authenticator.authenticate(request, "token")
+	const key = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token")
 	const passwords: model.User.Password.Change | any = await request.body
 	const entityTag = request.header.ifMatch?.at(0)
 	if (!entityTag)

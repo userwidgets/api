@@ -12,7 +12,9 @@ interface Response {
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Error | Response
 	const organization: model.Organization.Creatable | any = await request.body
-	const key = await context.authenticator.authenticate(request, "token", "admin")
+	const key = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token", "admin")
 	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
 	let url: URL | undefined
 	try {
@@ -36,6 +38,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized(
 			`Not authorized for this action on userwidgets organization. Missing permissions. Received '${request.header.authorization}'`
 		)
+	else if (gracely.Error.is(context.tager))
+		result = context.tager
 	else if (gracely.Error.is(context.tager.issuer))
 		result = context.tager.issuer
 	else {

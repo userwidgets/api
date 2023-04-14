@@ -6,16 +6,18 @@ import { router } from "../router"
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Error
-	const key = await context.authenticator.authenticate(request, "token")
-	const tag = gracely.Error.is(context.tager.verifier)
-		? context.tager.verifier
-		: await context.tager.verifier.verify(
+	const { key, issuer } = gracely.Error.is(context.authenticator)
+		? { key: context.authenticator, issuer: context.authenticator }
+		: { key: await context.authenticator.authenticate(request, "token"), issuer: context.authenticator.issuer }
+	const tag = gracely.Error.is(context.tager)
+		? context.tager
+		: await context.tager.verify(
 				request.parameter.tag?.split(".").length == 2 ? request.parameter.tag + "." : request.parameter.tag
 		  )
 	if (gracely.Error.is(tag))
 		result = tag
-	else if (gracely.Error.is(context.authenticator.issuer))
-		result = context.authenticator.issuer
+	else if (gracely.Error.is(issuer))
+		result = issuer
 	else if (gracely.Error.is(key))
 		result = key
 	else if (!key || !tag || key.email != tag.email)
@@ -26,8 +28,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 		const response = await context.users.update(tag)
 		result = gracely.Error.is(response)
 			? response
-			: (await context.authenticator.issuer.sign(response)) ??
-			  gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
+			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
 	return result
 }

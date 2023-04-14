@@ -9,12 +9,12 @@ import { Tager } from "./Tager"
 import { Users } from "./Users"
 
 export class Context {
-	#referer?: string | false
+	#referer?: string
 	get referer(): string | undefined {
 		try {
-			return (this.#referer ??= new URL(this.request.header.referer ?? "").hostname) || undefined
+			return (this.#referer ??= new URL(this.request.header.referer ?? "").hostname)
 		} catch (e) {
-			return (this.#referer ??= this.request.header.referer || false) || undefined
+			return (this.#referer ??= this.request.header.referer)
 		}
 	}
 	#applications?: Applications | gracely.Error
@@ -25,11 +25,14 @@ export class Context {
 	get users(): Users | gracely.Error {
 		return (this.#users ??= Users.open(this.environment, this.referer))
 	}
-	#authenticator?: Authenticator
-	get authenticator(): Authenticator {
+	#authenticator?: Authenticator | gracely.Error
+	get authenticator(): Authenticator | gracely.Error {
 		return (this.#authenticator ??= Authenticator.open(this.environment, this.referer))
 	}
-	readonly tager = Tager.open(this.environment, this.referer)
+	#tager?: Tager | gracely.Error
+	get tager(): Tager | gracely.Error {
+		return (this.#tager ??= Tager.open(this.environment, this.referer))
+	}
 	constructor(readonly environment: Environment, readonly request: http.Request) {}
 	async email(
 		recipient: string,

@@ -6,6 +6,7 @@ import "./user"
 import "./application"
 import "./organization"
 import "./me"
+import "./email"
 
 export { DurableApplication } from "./Context/Applications/Storage/"
 export { DurableUser } from "./Context/Users/Storage"

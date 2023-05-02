@@ -9,9 +9,8 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		version: data.version,
 	}
 	if (
-		gracely.Error.is(context.authenticator)
-			? context.authenticator
-			: (await context.authenticator.authenticate(request, "admin")) == "admin"
+		!gracely.Error.is(context.authenticator) &&
+		(await context.authenticator.authenticate(request, "admin")) == "admin"
 	) {
 		result.environment = context.environment
 		result.dependencies = data.dependencies

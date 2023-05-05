@@ -62,6 +62,9 @@ export class Context {
 					personalizations: [
 						{
 							to: [{ email: recipient }],
+							dkim_domain: this.environment.dkimDomain,
+							dkim_selector: this.environment.dkimSelector,
+							dkim_private_key: this.environment.dkimPrivateKey,
 						},
 					],
 					from: {

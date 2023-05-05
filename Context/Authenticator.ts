@@ -26,42 +26,33 @@ export class Authenticator {
 			: model.User.Key.Issuer.create(this.environment.issuer, this.referer, this.environment.privateSecret))
 	}
 	private constructor(private readonly environment: Environment, private readonly referer: string) {}
-	async authenticate(request: http.Request, method: "admin"): Promise<"admin" | undefined>
-	async authenticate(request: http.Request, method: "token"): Promise<model.User.Key | undefined | gracely.Error>
-	async authenticate(request: http.Request, method: "user"): Promise<model.User.Credentials | undefined>
+
+	async authenticate<M extends "token" | "admin" | "user">(
+		request: http.Request,
+		...method: M[]
+	): Promise<
+		| (M extends "token" ? model.User.Key | gracely.Error : never)
+		| (M extends "admin" ? "admin" : never)
+		| (M extends "user" ? model.User.Credentials : never)
+		| undefined
+	>
 	async authenticate(
 		request: http.Request,
-		...method: ("admin" | "token")[]
-	): Promise<"admin" | model.User.Key | undefined | gracely.Error>
-	async authenticate(
-		request: http.Request,
-		...method: ("token" | "user")[]
-	): Promise<model.User.Key | model.User.Credentials | undefined | gracely.Error>
-	async authenticate(
-		request: http.Request,
-		...method: ("admin" | "user")[]
-	): Promise<"admin" | model.User.Credentials | undefined>
-	async authenticate(
-		request: http.Request,
-		...method: ("admin" | "token" | "user")[]
-	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined | gracely.Error>
-	async authenticate(
-		request: http.Request,
-		...method: ("admin" | "token" | "user")[]
+		...method: ("token" | "admin" | "user")[]
 	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined | gracely.Error> {
 		return (
-			(method.some(m => m == "token")
+			(method.includes("token")
 				? gracely.Error.is(this.verifier)
 					? this.verifier
 					: await this.verifier
 							.authenticate(request.header.authorization)
 							.then(key => (key?.audience != this.referer ? undefined : key))
 				: undefined) ??
-			(method.some(m => m == "admin") &&
+			(method.includes("admin") &&
 			this.environment.adminSecret &&
 			request.header.authorization == `Basic ${this.environment.adminSecret}`
 				? "admin"
-				: method.some(m => m == "user")
+				: method.includes("user")
 				? model.User.Credentials.fromBasic(request.header.authorization)
 				: undefined)
 		)

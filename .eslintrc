@@ -27,7 +27,7 @@
 			{
 				"vars": "all",
 				"args": "none",
-				"varsIgnorePattern": "h"
+				"varsIgnorePattern": "^h$"
 			}
 		],
 		"@typescript-eslint/explicit-module-boundary-types": "off",

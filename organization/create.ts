@@ -74,7 +74,13 @@ async function postProcess(
 			if (!tag)
 				result = gracely.server.backendFailure("failed to sign.")
 			else {
-				url?.searchParams.set("id", tag)
+				url?.searchParams.set(
+					model.Configuration.addDefault(
+						{ inviteParameterName: context.environment.inviteParameterName },
+						"inviteParameterName"
+					).inviteParameterName,
+					tag
+				)
 				result = {
 					email: email,
 					tag: tag,

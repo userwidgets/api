@@ -1,6 +1,6 @@
 {
   "name": "@userwidgets/api",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "The userwidgets app api.",
   "private": true,
   "repository": "https://github.com/userwidgets/api",
@@ -78,7 +78,7 @@
     "typescript": "^5.0.3"
   },
   "dependencies": {
-    "@userwidgets/model": "^0.2.3",
+    "@userwidgets/model": "^0.3.1",
     "authly": "^3.0.3",
     "cloudly-formdata": "^0.0.8",
     "cloudly-http": "^0.1.4",

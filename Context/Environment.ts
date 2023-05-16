@@ -6,15 +6,22 @@ export interface Environment extends Record<string, undefined | string | Durable
 	 */
 	adminSecret?: string
 	/**
-	 * Password pepper
+	 * Password pepper. A random string.
 	 * Set as encrypted value in Cloudflare.
 	 */
 	hashSecret?: string
 	/**
 	 * private RSA key used for signing Keys and Tags (invites)
+	 * Must be pair with privateKey.
+	 * Set as encrypted value in Cloudflare. (But is exposed in /version)
+	 */
+	publicKey?: string
+	/**
+	 * private RSA key used for signing Keys and Tags (invites)
+	 * Must be pair with publicKey.
 	 * Set as encrypted value in Cloudflare.
 	 */
-	privateSecret?: string
+	privateKey?: string
 	/** The issuers name in JWT eg: userwidgets */
 	issuer?: string
 	/** kv binding (Not used...) */
@@ -35,4 +42,6 @@ export interface Environment extends Record<string, undefined | string | Durable
 	dkimDomain?: string
 	/** dkim selector for mailchannels */
 	dkimSelector?: string
+	/** Name of the queryparameter for the link with an invite-tag. Default to "invite" */
+	inviteParameterName?: string
 }

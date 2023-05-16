@@ -4,10 +4,9 @@ import * as http from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
-interface Response {
-	organization: model.Organization | gracely.Error
-	feedback?: model.User.Feedback[] | gracely.Error
-}
+type Response =
+	| { organization: gracely.Error }
+	| { organization: model.Organization; feedback: model.User.Feedback[] | gracely.Error }
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Error | Response
@@ -15,7 +14,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 	const key = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token", "admin")
-	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
 	let url: URL | undefined
 	try {
 		url = request.search.url ? new URL(request.search.url) : undefined
@@ -28,8 +26,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = context.applications
 	else if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!url)
-		result = gracely.client.invalidQueryArgument("url", "string", "Invalid url")
 	else if (!model.Organization.Creatable.is(organization))
 		result = gracely.client.invalidContent("model.Organization", "Request body invalid")
 	else if (gracely.Error.is(key))
@@ -43,32 +39,13 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.tager.issuer))
 		result = context.tager.issuer
 	else {
-		result = {
-			organization: await context.applications.createOrganization(organization),
-		}
-		if (!gracely.Error.is(result.organization))
-			result.feedback = await postProcess(
-				result.organization.id,
-				organization,
-				context,
-				url,
-				context.tager.issuer,
-				sendEmail
-			)
-		// const issuer = context.tager.createIssuer(request.header.application)
-		// ;(result = {
-		// 	organization: await context.applications.createOrganization(organization),
-		// }) &&
-		// 	!gracely.Error.is(result.organization) &&
-		// 	(result.feedback = await postProcess(
-		// 		request.header.application,
-		// 		result.organization.id,
-		// 		organization,
-		// 		context,
-		// 		url,
-		// 		context.tager.issuer,
-		// 		sendEmail
-		// 	))
+		const created = await context.applications.createOrganization(organization)
+		result = gracely.Error.is(created)
+			? { organization: created }
+			: {
+					organization: created,
+					feedback: await postProcess(created.id, organization, context, url, context.tager.issuer),
+			  }
 	}
 	return result
 }
@@ -77,9 +54,8 @@ async function postProcess(
 	organizationId: string,
 	organization: model.Organization.Creatable,
 	context: Context,
-	url: URL,
-	issuer: model.User.Tag.Issuer,
-	sendEmail: boolean
+	url: URL | undefined,
+	issuer: model.User.Tag.Issuer
 ): Promise<model.User.Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
@@ -98,11 +74,11 @@ async function postProcess(
 			if (!tag)
 				result = gracely.server.backendFailure("failed to sign.")
 			else {
-				url.searchParams.set("id", tag)
+				url?.searchParams.set("id", tag)
 				result = {
 					email: email,
 					tag: tag,
-					...(sendEmail && {
+					...(url && {
 						response: await context.email(
 							email,
 							`Invitation from ${organization.name}`,

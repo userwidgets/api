@@ -64,7 +64,13 @@ export async function update(request: http.Request, context: Context): Promise<h
 							result = gracely.server.backendFailure("failed to sign invite.")
 						else {
 							if (url)
-								url.searchParams.set("id", invite)
+								url.searchParams.set(
+									model.Configuration.addDefault(
+										{ inviteParameterName: context.environment.inviteParameterName },
+										"inviteParameterName"
+									).inviteParameterName,
+									invite
+								)
 							result = {
 								email,
 								invite,

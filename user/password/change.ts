@@ -13,7 +13,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	const passwords: model.User.Password.Change | any = await request.body
 	const entityTag = request.header.ifMatch?.at(0)
 	if (!entityTag)
-		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity tag.")
+		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity invite.")
 	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
 		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
 	else if (!request.parameter.email)

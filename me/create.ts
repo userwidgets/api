@@ -7,14 +7,14 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Error
-	const tag = gracely.Error.is(context.tager) ? context.tager : await context.tager.verify(request.parameter.tag)
+	const invite = gracely.Error.is(context.tager) ? context.tager : await context.tager.verify(request.parameter.invite)
 	const register: model.User.Credentials.Register | any = await request.body
 	if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!tag)
+	else if (!invite)
 		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(tag))
-		result = tag
+	else if (gracely.Error.is(invite))
+		result = invite
 	else if (!model.User.Credentials.Register.is(register))
 		result = gracely.client.malformedContent(
 			"User.Credentials.Register",
@@ -23,16 +23,16 @@ export async function create(request: http.Request, context: Context): Promise<h
 		)
 	else if (gracely.Error.is(context.authenticator))
 		result = context.authenticator
-	else if (register.user != tag.email)
+	else if (register.user != invite.email)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.authenticator.issuer))
 		result = context.authenticator.issuer
 	else {
 		const response = await context.users.create({
-			email: tag.email,
+			email: invite.email,
 			password: register.password,
 			name: register.name,
-			permissions: tag.permissions,
+			permissions: invite.permissions,
 		})
 		result = gracely.Error.is(response)
 			? response
@@ -42,4 +42,4 @@ export async function create(request: http.Request, context: Context): Promise<h
 	return result
 }
 
-router.add("POST", "/me/:tag", create)
+router.add("POST", "/me/:invite", create)

@@ -29,7 +29,7 @@ export async function change(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.users))
 		result = context.users
 	else if (!entityTag)
-		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity tag.")
+		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity invite.")
 	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
 		result = gracely.client.malformedHeader("If-Match", "Expected entityTag to be of type isoly.DateTime or '*'")
 	else if (!key)

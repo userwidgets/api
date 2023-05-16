@@ -51,7 +51,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 			: await Promise.all(
 					neophytes.map(async email => {
 						let result: model.User.Feedback.Invitation
-						const tag = await issuer.sign({
+						const invite = await issuer.sign({
 							email: email,
 							active: gracely.Error.is(await users.fetch(email)) ? false : true,
 							permissions: {
@@ -60,14 +60,14 @@ export async function update(request: http.Request, context: Context): Promise<h
 								},
 							},
 						})
-						if (!tag)
-							result = gracely.server.backendFailure("failed to sign tag.")
+						if (!invite)
+							result = gracely.server.backendFailure("failed to sign invite.")
 						else {
 							if (url)
-								url.searchParams.set("id", tag)
+								url.searchParams.set("id", invite)
 							result = {
-								email: email,
-								tag: tag,
+								email,
+								invite,
 								...(url && {
 									response: await context.email(
 										email,

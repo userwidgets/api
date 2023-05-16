@@ -55,12 +55,12 @@ async function postProcess(
 	organization: model.Organization.Creatable,
 	context: Context,
 	url: URL | undefined,
-	issuer: model.User.Tag.Issuer
+	issuer: model.User.Invite.Issuer
 ): Promise<model.User.Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
 			let result: model.User.Feedback | gracely.Error
-			const signable: model.User.Tag.Creatable = {
+			const signable: model.User.Invite.Creatable = {
 				email: email,
 				active: !gracely.Error.is(context.users) && gracely.Error.is(await context.users.fetch(email)) ? false : true,
 				permissions: {
@@ -70,8 +70,8 @@ async function postProcess(
 						: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
 				},
 			}
-			const tag = await issuer.sign(signable)
-			if (!tag)
+			const invite = await issuer.sign(signable)
+			if (!invite)
 				result = gracely.server.backendFailure("failed to sign.")
 			else {
 				url?.searchParams.set(
@@ -79,11 +79,11 @@ async function postProcess(
 						{ inviteParameterName: context.environment.inviteParameterName },
 						"inviteParameterName"
 					).inviteParameterName,
-					tag
+					invite
 				)
 				result = {
 					email: email,
-					tag: tag,
+					invite: invite,
 					...(url && {
 						response: await context.email(
 							email,

@@ -18,12 +18,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 				case "pem-one-line":
 					publicKey = "-----BEGIN PUBLIC KEY-----" + publicKey + "-----END PUBLIC KEY-----"
 			}
-		} else {
+		} else
 			publicKey = "Misconfiguration: public- and privatekey mismatch."
-		}
-	} else {
+	} else
 		publicKey = "Misconfiguration: public- and/or privatekey is missing in environment."
-	}
 
 	const result: Record<string, any> = {
 		name: data.name,

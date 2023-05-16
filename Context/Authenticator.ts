@@ -6,12 +6,9 @@ import { Environment } from "./Environment"
 export class Authenticator {
 	#verifier?: model.User.Key.Verifier | gracely.Error
 	get verifier(): model.User.Key.Verifier | gracely.Error {
-		return (
-			this.#verifier ??
-			(this.#verifier = !this.environment.publicKey
-				? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
-				: model.User.Key.Verifier.create(this.environment.publicKey))
-		)
+		return (this.#verifier ??= !this.environment.publicKey
+			? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
+			: model.User.Key.Verifier.create(this.environment.publicKey))
 	}
 	#issuer?: model.User.Key.Issuer | gracely.Error
 	get issuer(): model.User.Key.Issuer | gracely.Error {

@@ -5,12 +5,9 @@ import { Environment } from "./Environment"
 export class Tager {
 	#verifier?: model.User.Tag.Verifier | gracely.Error
 	private get verifier(): model.User.Tag.Verifier | gracely.Error {
-		return (
-			this.#verifier ??
-			(this.#verifier = !this.environment.publicKey
-				? gracely.server.misconfigured("publicKey", "PublicKey missing from configuration.")
-				: model.User.Tag.Verifier.create(this.environment.publicKey))
-		)
+		return (this.#verifier ??= !this.environment.publicKey
+			? gracely.server.misconfigured("publicKey", "PublicKey missing from configuration.")
+			: model.User.Tag.Verifier.create(this.environment.publicKey))
 	}
 	#issuer?: model.User.Tag.Issuer | gracely.Error
 	get issuer(): model.User.Tag.Issuer | gracely.Error {

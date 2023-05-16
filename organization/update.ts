@@ -10,12 +10,11 @@ export async function update(request: http.Request, context: Context): Promise<h
 	const key = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
-	const sendEmail = request.search.sendEmail == undefined || request.search.sendEmail != "false"
-	let url: URL
+	let url: URL | undefined
 	try {
 		url = request.search.url ? new URL(request.search.url) : request.url
 	} catch (_) {
-		url = request.url
+		url = undefined
 	}
 	if (gracely.Error.is(context.applications))
 		result = context.applications
@@ -64,11 +63,12 @@ export async function update(request: http.Request, context: Context): Promise<h
 						if (!tag)
 							result = gracely.server.backendFailure("failed to sign tag.")
 						else {
-							url.searchParams.set("id", tag)
+							if (url)
+								url.searchParams.set("id", tag)
 							result = {
 								email: email,
 								tag: tag,
-								...(sendEmail && {
+								...(url && {
 									response: await context.email(
 										email,
 										`You have been invited to join an organization.`,

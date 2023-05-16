@@ -37,13 +37,13 @@ export async function update(request: http.Request, context: Context): Promise<h
 		)
 	else if (!key.permissions["*"]?.user?.write && !key.permissions[request.parameter.organizationId]?.user?.write)
 		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(context.tager))
-		result = context.tager
-	else if (gracely.Error.is(context.tager.issuer))
-		result = context.tager.issuer
+	else if (gracely.Error.is(context.inviter))
+		result = context.inviter
+	else if (gracely.Error.is(context.inviter.issuer))
+		result = context.inviter.issuer
 	else {
 		const organizationId = request.parameter.organizationId
-		const issuer = context.tager.issuer
+		const issuer = context.inviter.issuer
 		const users = context.users
 		const neophytes = await context.applications.updateOrganization(request.parameter.organizationId, emails)
 		result = gracely.Error.is(neophytes)
@@ -51,7 +51,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 			: await Promise.all(
 					neophytes.map(async email => {
 						let result: model.User.Feedback.Invitation
-						const tag = await issuer.sign({
+						const invite = await issuer.sign({
 							email: email,
 							active: gracely.Error.is(await users.fetch(email)) ? false : true,
 							permissions: {
@@ -60,14 +60,20 @@ export async function update(request: http.Request, context: Context): Promise<h
 								},
 							},
 						})
-						if (!tag)
-							result = gracely.server.backendFailure("failed to sign tag.")
+						if (!invite)
+							result = gracely.server.backendFailure("failed to sign invite.")
 						else {
 							if (url)
-								url.searchParams.set("id", tag)
+								url.searchParams.set(
+									model.Configuration.addDefault(
+										{ inviteParameterName: context.environment.inviteParameterName },
+										"inviteParameterName"
+									).inviteParameterName,
+									invite
+								)
 							result = {
-								email: email,
-								tag: tag,
+								email,
+								invite,
 								...(url && {
 									response: await context.email(
 										email,

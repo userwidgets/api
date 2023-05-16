@@ -31,18 +31,18 @@ export class Users {
 		}
 		return result
 	}
-	async update(tag: model.User.Tag): Promise<model.User.Key.Creatable | gracely.Error> {
-		const user = await common.DurableObject.Client.open(this.userNamespace, tag.email.toLowerCase()).patch<model.User>(
-			"user",
-			tag
-		)
+	async update(invite: model.User.Invite): Promise<model.User.Key.Creatable | gracely.Error> {
+		const user = await common.DurableObject.Client.open(
+			this.userNamespace,
+			invite.email.toLowerCase()
+		).patch<model.User>("user", invite)
 		let result: model.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
 			? user
-			: model.User.toKey(user, tag.audience) ?? gracely.client.notFound()
+			: model.User.toKey(user, invite.audience) ?? gracely.client.notFound()
 		if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
 			const application = await common.DurableObject.Client.open(
 				this.applicationNamespace,
-				tag.audience
+				invite.audience
 			).get<model.Application>("application")
 			gracely.Error.is(application)
 				? (result = application)

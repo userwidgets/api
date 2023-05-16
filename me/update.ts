@@ -9,23 +9,23 @@ export async function update(request: http.Request, context: Context): Promise<h
 	const { key, issuer } = gracely.Error.is(context.authenticator)
 		? { key: context.authenticator, issuer: context.authenticator }
 		: { key: await context.authenticator.authenticate(request, "token"), issuer: context.authenticator.issuer }
-	const tag = gracely.Error.is(context.tager)
-		? context.tager
-		: await context.tager.verify(
-				request.parameter.tag?.split(".").length == 2 ? request.parameter.tag + "." : request.parameter.tag
+	const invite = gracely.Error.is(context.inviter)
+		? context.inviter
+		: await context.inviter.verify(
+				request.parameter.invite?.split(".").length == 2 ? request.parameter.invite + "." : request.parameter.invite
 		  )
-	if (gracely.Error.is(tag))
-		result = tag
+	if (gracely.Error.is(invite))
+		result = invite
 	else if (gracely.Error.is(issuer))
 		result = issuer
 	else if (gracely.Error.is(key))
 		result = key
-	else if (!key || !tag || key.email != tag.email)
+	else if (!key || !invite || key.email != invite.email)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.users))
 		result = context.users
 	else {
-		const response = await context.users.update(tag)
+		const response = await context.users.update(invite)
 		result = gracely.Error.is(response)
 			? response
 			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
@@ -33,4 +33,4 @@ export async function update(request: http.Request, context: Context): Promise<h
 	return result
 }
 
-router.add("PATCH", "/me/:tag", update)
+router.add("PATCH", "/me/:invite", update)

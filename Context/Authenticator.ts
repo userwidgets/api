@@ -8,22 +8,25 @@ export class Authenticator {
 	get verifier(): model.User.Key.Verifier | gracely.Error {
 		return (
 			this.#verifier ??
-			(this.#verifier = !this.environment.issuer
-				? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
-				: !model.User.Key.isIssuer(this.environment.issuer)
-				? gracely.server.misconfigured("issuer", "Configured issuer is not implemented.")
-				: model.User.Key.Verifier.create(this.environment.issuer))
+			(this.#verifier = !this.environment.publicKey
+				? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
+				: model.User.Key.Verifier.create(this.environment.publicKey))
 		)
 	}
 	#issuer?: model.User.Key.Issuer | gracely.Error
 	get issuer(): model.User.Key.Issuer | gracely.Error {
 		return (this.#issuer ??= !this.environment.issuer
 			? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
-			: !model.User.Key.isIssuer(this.environment.issuer)
-			? gracely.server.misconfigured("issuer", "Configured issuer is not implemented.")
-			: !this.environment.privateSecret
-			? model.User.Key.Issuer.create(this.environment.issuer, this.referer)
-			: model.User.Key.Issuer.create(this.environment.issuer, this.referer, this.environment.privateSecret))
+			: !this.environment.publicKey
+			? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
+			: !this.environment.privateKey
+			? gracely.server.misconfigured("privateKey", "PrivateKey is missing from configuration.")
+			: model.User.Key.Issuer.create(
+					this.environment.issuer,
+					this.referer, // audience
+					this.environment.publicKey,
+					this.environment.privateKey
+			  ))
 	}
 	private constructor(private readonly environment: Environment, private readonly referer: string) {}
 

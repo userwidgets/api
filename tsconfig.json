@@ -14,7 +14,7 @@
     "sourceMap": true,
     "esModuleInterop": true,
 		"noImplicitAny": true,
-		"removeComments": true,
+		"removeComments": false,
 		"noImplicitThis": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,

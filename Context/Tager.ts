@@ -7,11 +7,9 @@ export class Tager {
 	private get verifier(): model.User.Tag.Verifier | gracely.Error {
 		return (
 			this.#verifier ??
-			(this.#verifier = !this.environment.issuer
-				? gracely.server.misconfigured("issuer", "issuer missing from configuration.")
-				: !model.User.Key.isIssuer(this.environment.issuer)
-				? gracely.server.misconfigured("issuer", "configured issuer is not implemented")
-				: model.User.Tag.Verifier.create(this.environment.issuer))
+			(this.#verifier = !this.environment.publicKey
+				? gracely.server.misconfigured("publicKey", "PublicKey missing from configuration.")
+				: model.User.Tag.Verifier.create(this.environment.publicKey))
 		)
 	}
 	#issuer?: model.User.Tag.Issuer | gracely.Error
@@ -20,11 +18,16 @@ export class Tager {
 			? gracely.client.missingHeader("Referer", "Referer required.")
 			: !this.environment.issuer
 			? gracely.server.misconfigured("issuer", "issuer is missing from configuration")
-			: !model.User.Key.isIssuer(this.environment.issuer)
-			? gracely.server.misconfigured("issuer", "configured issuer is not implemented.")
-			: !this.environment.privateSecret
-			? model.User.Tag.Issuer.create(this.environment.issuer, this.referer)
-			: model.User.Tag.Issuer.create(this.environment.issuer, this.referer, this.environment.privateSecret))
+			: !this.environment.publicKey
+			? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration")
+			: !this.environment.privateKey
+			? gracely.server.misconfigured("privateKey", "PrivateKey is missing from configuration")
+			: model.User.Tag.Issuer.create(
+					this.environment.issuer,
+					this.referer,
+					this.environment.publicKey,
+					this.environment.privateKey
+			  ))
 	}
 	private constructor(public readonly environment: Environment, private readonly referer: string) {}
 	async verify(tag: string | undefined): Promise<model.User.Tag | gracely.Error | undefined> {

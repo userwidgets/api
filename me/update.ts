@@ -9,9 +9,9 @@ export async function update(request: http.Request, context: Context): Promise<h
 	const { key, issuer } = gracely.Error.is(context.authenticator)
 		? { key: context.authenticator, issuer: context.authenticator }
 		: { key: await context.authenticator.authenticate(request, "token"), issuer: context.authenticator.issuer }
-	const invite = gracely.Error.is(context.tager)
-		? context.tager
-		: await context.tager.verify(
+	const invite = gracely.Error.is(context.inviter)
+		? context.inviter
+		: await context.inviter.verify(
 				request.parameter.invite?.split(".").length == 2 ? request.parameter.invite + "." : request.parameter.invite
 		  )
 	if (gracely.Error.is(invite))

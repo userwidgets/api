@@ -5,7 +5,7 @@ import { router } from "../router"
 import { Applications } from "./Applications"
 import { Authenticator } from "./Authenticator"
 import { Environment } from "./Environment"
-import { Tager } from "./Tager"
+import { Inviter } from "./Inviter"
 import { Users } from "./Users"
 
 export class Context {
@@ -29,9 +29,9 @@ export class Context {
 	get authenticator(): Authenticator | gracely.Error {
 		return (this.#authenticator ??= Authenticator.open(this.environment, this.referer))
 	}
-	#tager?: Tager | gracely.Error
-	get tager(): Tager | gracely.Error {
-		return (this.#tager ??= Tager.open(this.environment, this.referer))
+	#inviter?: Inviter | gracely.Error
+	get inviter(): Inviter | gracely.Error {
+		return (this.#inviter ??= Inviter.open(this.environment, this.referer))
 	}
 	constructor(readonly environment: Environment, readonly request: http.Request) {}
 	async email(

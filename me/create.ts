@@ -7,7 +7,9 @@ import { router } from "../router"
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Error
-	const invite = gracely.Error.is(context.tager) ? context.tager : await context.tager.verify(request.parameter.invite)
+	const invite = gracely.Error.is(context.inviter)
+		? context.inviter
+		: await context.inviter.verify(request.parameter.invite)
 	const register: model.User.Credentials.Register | any = await request.body
 	if (gracely.Error.is(context.users))
 		result = context.users

@@ -2,7 +2,7 @@ import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import { Environment } from "./Environment"
 
-export class Tager {
+export class Inviter {
 	#verifier?: model.User.Invite.Verifier | gracely.Error
 	private get verifier(): model.User.Invite.Verifier | gracely.Error {
 		return (this.#verifier ??= !this.environment.publicKey
@@ -35,7 +35,7 @@ export class Tager {
 	async invite(token: string, ...audience: string[]): Promise<model.User.Invite | undefined | gracely.Error> {
 		return gracely.Error.is(this.verifier) ? this.verifier : await this.verifier.verify(token, ...audience)
 	}
-	static open(environment: Environment, referer: string | undefined): Tager | gracely.Error {
+	static open(environment: Environment, referer: string | undefined): Inviter | gracely.Error {
 		return !referer ? gracely.client.missingHeader("Referer", "Referer required.") : new this(environment, referer)
 	}
 }

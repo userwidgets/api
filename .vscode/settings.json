@@ -3,7 +3,7 @@
 		".*": true,
 		"*.json": true,
 		"dist": true,
-		"README.md": true,
+		"README.md": false,
 		"LICENSE": true,
 		"CODEOWNERS": true,
 		"**/tsconfig.*": true,

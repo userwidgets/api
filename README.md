@@ -9,7 +9,7 @@ Use [utily/cryptly](https://github.com/utily/cryptly)
 The application works without email-settings.
 (But emailed links are hard to find...)
 
-Read more about setting emailfor cloudflare workers:
+Read more about setting email for cloudflare workers:
 * https://blog.cloudflare.com/sending-email-from-workers-with-mailchannels/
 * https://api.mailchannels.net/tx/v1/documentation
 * https://en.wikipedia.org/wiki/DMARC
@@ -18,7 +18,7 @@ Read more about setting emailfor cloudflare workers:
 
 ## Initialize first user
 * `Post /application`
-* `Post /organization`
+* `Post /organization?url=[frontend]`
 * `Post /me`
 	* Some data from previous requests are required to send this one.
 

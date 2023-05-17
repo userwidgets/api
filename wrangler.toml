@@ -29,14 +29,13 @@ issuer = "userwidgets"
 
 [env.preview]
 workers_dev = false
-vars = { email = "no-reply@userwidgets.com", issuer = "userwidgets" }
 durable_objects.bindings = [
 	{ name = "userNamespace", class_name = "DurableUser" },
 	{ name = "applicationNamespace", class_name = "DurableApplication" },
 ]
-[emv.preview.vars]
+[env.preview.vars]
 email = "no-reply@userwidgets.com"
-issuer = "userwidgets"
+issuer = "userwidgets-preview"
 
 [env.miniflare]
 workers_dev = true

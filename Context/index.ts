@@ -1,5 +1,4 @@
 import * as gracely from "gracely"
-// import { FormData } from "cloudly-formdata"
 import * as http from "cloudly-http"
 import { router } from "../router"
 import { Applications } from "./Applications"
@@ -98,16 +97,3 @@ export class Context {
 		return http.Response.to(result)
 	}
 }
-
-// http.Parser.add(
-// 	async request =>
-// 		Object.fromEntries(
-// 			(
-// 				await FormData.parse(
-// 					new Uint8Array(await request.arrayBuffer()),
-// 					request.headers.get("Content-Type") ?? "multipart/form-data"
-// 				)
-// 			).entries()
-// 		),
-// 	"multipart/form-data"
-// )

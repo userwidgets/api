@@ -3,7 +3,7 @@ import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import { storage } from "cloudly-storage"
 import { Environment } from "./Environment"
-
+consistent
 export class Inviter {
 	private constructor(
 		private readonly store: storage.KeyValueStore<model.User.Invite.Creatable>,
@@ -29,10 +29,10 @@ export class Inviter {
 		return this.issuer.sign(invite)
 	}
 	async verify(
-		invite: string | undefined,
+		token: string | undefined,
 		...audience: string[]
 	): Promise<model.User.Invite | undefined | gracely.Error> {
-		return this.verifier.verify(invite, ...(audience.length ? audience : [this.referer]))
+		return this.verifier.verify(token, ...(audience.length ? audience : [this.referer]))
 	}
 	static open(environment: Environment, referer: string | undefined): Inviter | gracely.Error {
 		return !environment.store

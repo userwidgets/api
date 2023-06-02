@@ -6,33 +6,35 @@ import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.Organization[] | gracely.Error
-	const key = gracely.Error.is(context.authenticator)
+	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
+
 	if (gracely.Error.is(context.applications))
 		result = context.applications
-	else if (!key)
+	else if (!credentials)
 		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(key))
-		result = key
+	else if (gracely.Error.is(credentials))
+		result = credentials
 	else
 		result =
-			(result = await context.applications.listOrganizations(Object.keys(key.permissions))) &&
-			key.permissions["*"]?.organization?.read
+			(result = await context.applications.listOrganizations(Object.keys(credentials.permissions))) &&
+			credentials.permissions["*"]?.organization?.read
 				? result
 				: gracely.Error.is(result)
 				? result
 				: (result = result.map(
 						organization => (
 							(organization.permissions = organization.permissions.filter(name => {
-								const permission = key.permissions[organization.id]
+								const permission = credentials.permissions[organization.id]
 								return (
 									(permission && (permission[name]?.read || permission[name]?.write)) ||
-									(key.permissions["*"] && (key.permissions["*"][name]?.read || key.permissions["*"][name]?.write))
+									(credentials.permissions["*"] &&
+										(credentials.permissions["*"][name]?.read || credentials.permissions["*"][name]?.write))
 								)
 							})),
-							!key.permissions["*"]?.user?.read ||
-								(!key.permissions[organization.id] && (organization.users = [key.email])),
+							!credentials.permissions["*"]?.user?.read ||
+								(!credentials.permissions[organization.id] && (organization.users = [credentials.email])),
 							organization
 						)
 				  ))

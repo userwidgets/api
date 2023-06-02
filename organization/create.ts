@@ -1,7 +1,9 @@
 import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import * as http from "cloudly-http"
+import { common } from "../common"
 import { Context } from "../Context"
+import { Inviter } from "../Context/Inviter"
 import { router } from "../router"
 
 type Response =
@@ -11,40 +13,33 @@ type Response =
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Error | Response
 	const organization: model.Organization.Creatable | any = await request.body
-	const key = gracely.Error.is(context.authenticator)
+	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token", "admin")
-	let url: URL | undefined
-	try {
-		url = request.search.url ? new URL(request.search.url) : undefined
-	} catch (_) {
-		url = undefined
-	}
-	if (url == request.url)
-		result = gracely.client.missingQueryArgument("url", "string", "Missing query argument for registration URL.")
-	else if (gracely.Error.is(context.applications))
+	const url = common.url.parse(request.search.url)
+
+	if (gracely.Error.is(context.applications))
 		result = context.applications
 	else if (gracely.Error.is(context.users))
 		result = context.users
 	else if (!model.Organization.Creatable.is(organization))
 		result = gracely.client.invalidContent("model.Organization", "Request body invalid")
-	else if (gracely.Error.is(key))
-		result = key
-	else if (!key || (key != "admin" && !key.permissions["*"]?.application?.write))
+	else if (gracely.Error.is(credentials))
+		result = credentials
+	else if (!credentials || (credentials != "admin" && !credentials.permissions["*"]?.application?.write))
 		result = gracely.client.unauthorized(
 			`Not authorized for this action on userwidgets organization. Missing permissions. Received '${request.header.authorization}'`
 		)
 	else if (gracely.Error.is(context.inviter))
 		result = context.inviter
-	else if (gracely.Error.is(context.inviter.issuer))
-		result = context.inviter.issuer
 	else {
 		const created = await context.applications.createOrganization(organization)
+
 		result = gracely.Error.is(created)
 			? { organization: created }
 			: {
 					organization: created,
-					feedback: await postProcess(created.id, organization, context, url, context.inviter.issuer),
+					feedback: await postProcess(created.id, organization, context, url, context.inviter),
 			  }
 	}
 	return result
@@ -55,7 +50,7 @@ async function postProcess(
 	organization: model.Organization.Creatable,
 	context: Context,
 	url: URL | undefined,
-	issuer: model.User.Invite.Issuer
+	inviter: Inviter
 ): Promise<model.User.Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
@@ -70,7 +65,7 @@ async function postProcess(
 						: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
 				},
 			}
-			const invite = await issuer.sign(signable)
+			const invite = await inviter.create(signable)
 			if (!invite)
 				result = gracely.server.backendFailure("failed to sign.")
 			else {

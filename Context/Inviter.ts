@@ -3,7 +3,7 @@ import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
 import { storage } from "cloudly-storage"
 import { Environment } from "./Environment"
-consistent
+
 export class Inviter {
 	private constructor(
 		private readonly store: storage.KeyValueStore<model.User.Invite.Creatable>,

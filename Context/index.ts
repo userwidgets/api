@@ -1,5 +1,6 @@
 import * as gracely from "gracely"
 import * as http from "cloudly-http"
+import { common } from "../common"
 import { router } from "../router"
 import { Applications } from "./Applications"
 import { Authenticator } from "./Authenticator"
@@ -10,11 +11,7 @@ import { Users } from "./Users"
 export class Context {
 	#referer?: string
 	get referer(): string | undefined {
-		try {
-			return (this.#referer ??= new URL(this.request.header.referer ?? "").hostname)
-		} catch (e) {
-			return (this.#referer ??= this.request.header.referer)
-		}
+		return (this.#referer ??= common.url.parse(this.request.header.referer)?.hostname ?? this.request.header.referer)
 	}
 	#applications?: Applications | gracely.Error
 	get applications(): Applications | gracely.Error {
@@ -94,6 +91,9 @@ export class Context {
 			const details = (typeof e == "object" && e && e.toString()) || undefined
 			result = http.Response.create(gracely.server.unknown(details, "exception"))
 		}
-		return http.Response.to(result)
+		return await http.Response.to({
+			...result,
+			header: { ...result.header, accessControlAllowOrigin: result.header.accessControlAllowOrigin ?? "*" },
+		})
 	}
 }

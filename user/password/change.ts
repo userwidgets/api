@@ -7,11 +7,12 @@ import { router } from "../../router"
 
 export async function change(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Result | gracely.Error
-	const key = gracely.Error.is(context.authenticator)
+	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
 	const passwords: model.User.Password.Change | any = await request.body
 	const entityTag = request.header.ifMatch?.at(0)
+
 	if (!entityTag)
 		result = gracely.client.malformedContent("If-Match", "string", "If-Match header must contain an entity invite.")
 	else if (!isoly.DateTime.is(entityTag) && entityTag != "*")
@@ -32,16 +33,16 @@ export async function change(request: http.Request, context: Context): Promise<h
 		)
 	else if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!key)
+	else if (!credentials)
 		result = gracely.client.unauthorized("Failed to authorize request.")
-	else if (gracely.Error.is(key))
-		result = key
-	else if (key.email != request.parameter.email)
+	else if (gracely.Error.is(credentials))
+		result = credentials
+	else if (credentials.email != request.parameter.email)
 		result = gracely.client.unauthorized("Cant change password on another user.")
-	else if (isoly.DateTime.epoch(isoly.DateTime.now()) - isoly.DateTime.epoch(key.issued) > 15 * 60)
+	else if (isoly.DateTime.epoch(isoly.DateTime.now()) - isoly.DateTime.epoch(credentials.issued) > 15 * 60)
 		result = gracely.client.unauthorized("Session to close to expiring to change password.")
 	else
-		result = await context.users.changePassword(key.email, passwords, entityTag)
+		result = await context.users.changePassword(credentials.email, passwords, entityTag)
 	return result
 }
 router.add("PUT", "/user/:email/password", change)

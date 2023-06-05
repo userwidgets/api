@@ -27,8 +27,6 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = context.authenticator
 	else if (register.user != invite.email)
 		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(context.authenticator.issuer))
-		result = context.authenticator.issuer
 	else {
 		const response = await context.users.create({
 			email: invite.email,
@@ -38,7 +36,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 		})
 		result = gracely.Error.is(response)
 			? response
-			: (await context.authenticator.issuer.sign(response)) ??
+			: (await context.authenticator.sign(response)) ??
 			  gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
 	return result

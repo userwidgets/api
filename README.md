@@ -5,6 +5,9 @@
 Use [utily/cryptly](https://github.com/utily/cryptly)
 `await (Signer.generate("RSA", "SHA-256", 4096)).export("private", "base64")` ([Demonstrated here](https://github.com/utily/cryptly/blob/master/Signer/Rsa.spec.ts#L22-L42) )
 
+## Create KV
+Run `wrangler kv:namespace create store` and update `wrangler.toml` with information from the result.
+
 ## Email
 The application works without email-settings.
 (But emailed links are hard to find...)

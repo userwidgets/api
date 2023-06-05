@@ -7,12 +7,13 @@ import { router } from "../../router"
 
 export async function remove(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: { organization: model.Organization | gracely.Error; user?: gracely.Error } | gracely.Error
-	const key = gracely.Error.is(context.authenticator)
+	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
 	const entityTag = request.header.ifMatch?.at(0)
-	if (gracely.Error.is(key))
-		result = key
+
+	if (gracely.Error.is(credentials))
+		result = credentials
 	else if (gracely.Error.is(context.applications))
 		result = context.applications
 	else if (!request.parameter.organizationId)
@@ -33,7 +34,7 @@ export async function remove(request: http.Request, context: Context): Promise<h
 		result = gracely.client.missingHeader("If-Match", "Missing required header If-Match.")
 	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
 		result = gracely.client.malformedHeader("If-Match", "If-Match header must be an isoly.DateTime")
-	else if (!key)
+	else if (!credentials)
 		result = gracely.client.unauthorized()
 	else {
 		result = await context.applications.removeOrganizationUser(

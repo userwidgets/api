@@ -4,6 +4,9 @@ name = "userwidgets"
 workers_dev = true
 routes = []
 vars = { }
+kv_namespaces = [
+	{ binding = "userwidgetsStore", id = "a8172eb552734be293601fea4b34bcb9" }
+]
 durable_objects.bindings = [
 	{ name = "userNamespace", class_name = "DurableUser" },
 	{ name = "applicationNamespace", class_name = "DurableApplication" },
@@ -18,6 +21,9 @@ main = "_worker.js"
 
 [env.production]
 workers_dev = false
+kv_namespaces = [
+	{ binding = "userwidgetsStore", id = "a8172eb552734be293601fea4b34bcb9" }
+]
 durable_objects.bindings = [
 	{ name = "userNamespace", class_name = "DurableUser" },
 	{ name = "applicationNamespace", class_name = "DurableApplication" },
@@ -39,6 +45,9 @@ issuer = "userwidgets-preview"
 
 [env.miniflare]
 workers_dev = true
+kv_namespaces = [
+	{ binding = "userwidgetsStore" }
+]
 durable_objects.bindings = [
 	{ name = "userNamespace", class_name = "DurableUser" },
 	{ name = "applicationNamespace", class_name = "DurableApplication" },

@@ -6,21 +6,22 @@ import { router } from "../router"
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: authly.Token | gracely.Error
-	const { key, issuer } = gracely.Error.is(context.authenticator)
-		? { key: context.authenticator, issuer: context.authenticator }
-		: { key: await context.authenticator.authenticate(request, "token"), issuer: context.authenticator.issuer }
+	const credentials = gracely.Error.is(context.authenticator)
+		? context.authenticator
+		: await context.authenticator.authenticate(request, "token")
 	const invite = gracely.Error.is(context.inviter)
 		? context.inviter
 		: await context.inviter.verify(
 				request.parameter.invite?.split(".").length == 2 ? request.parameter.invite + "." : request.parameter.invite
 		  )
+
 	if (gracely.Error.is(invite))
 		result = invite
-	else if (gracely.Error.is(issuer))
-		result = issuer
-	else if (gracely.Error.is(key))
-		result = key
-	else if (!key || !invite || key.email != invite.email)
+	else if (gracely.Error.is(context.authenticator))
+		result = context.authenticator
+	else if (gracely.Error.is(credentials))
+		result = credentials
+	else if (!credentials || !invite || credentials.email != invite.email)
 		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(context.users))
 		result = context.users
@@ -28,7 +29,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		const response = await context.users.update(invite)
 		result = gracely.Error.is(response)
 			? response
-			: (await issuer.sign(response)) ?? gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
+			: (await context.authenticator.sign(response)) ??
+			  gracely.server.misconfigured("issuer | privateKey", "Failed to sign token.")
 	}
 	return result
 }

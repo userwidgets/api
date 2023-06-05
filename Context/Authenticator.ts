@@ -4,34 +4,23 @@ import * as http from "cloudly-http"
 import { Environment } from "./Environment"
 
 export class Authenticator {
-	#verifier?: model.User.Key.Verifier | gracely.Error
-	get verifier(): model.User.Key.Verifier | gracely.Error {
-		return (this.#verifier ??= !this.environment.publicKey
-			? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
-			: model.User.Key.Verifier.create(this.environment.publicKey))
+	private constructor(
+		private readonly environment: Environment,
+		private readonly referer: string,
+		private readonly issuer: model.User.Key.Issuer,
+		private readonly verifier: model.User.Key.Verifier
+	) {}
+	async sign(key: model.User.Key.Creatable): Promise<string | undefined> {
+		return this.issuer.sign(key)
 	}
-	#issuer?: model.User.Key.Issuer | gracely.Error
-	get issuer(): model.User.Key.Issuer | gracely.Error {
-		return (this.#issuer ??= !this.environment.issuer
-			? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
-			: !this.environment.publicKey
-			? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
-			: !this.environment.privateKey
-			? gracely.server.misconfigured("privateKey", "PrivateKey is missing from configuration.")
-			: model.User.Key.Issuer.create(
-					this.environment.issuer,
-					this.referer, // audience
-					this.environment.publicKey,
-					this.environment.privateKey
-			  ))
+	async verify(token: string, ...audience: string[]): Promise<model.User.Key | undefined> {
+		return this.verifier.verify(token, ...(audience.length ? audience : [this.referer]))
 	}
-	private constructor(private readonly environment: Environment, private readonly referer: string) {}
-
 	async authenticate<M extends "token" | "admin" | "user">(
 		request: http.Request,
 		...method: M[]
 	): Promise<
-		| (M extends "token" ? model.User.Key | gracely.Error : never)
+		| (M extends "token" ? model.User.Key : never)
 		| (M extends "admin" ? "admin" : never)
 		| (M extends "user" ? model.User.Credentials : never)
 		| undefined
@@ -39,14 +28,10 @@ export class Authenticator {
 	async authenticate(
 		request: http.Request,
 		...method: ("token" | "admin" | "user")[]
-	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined | gracely.Error> {
+	): Promise<"admin" | model.User.Key | model.User.Credentials | undefined> {
 		return (
 			(method.includes("token")
-				? gracely.Error.is(this.verifier)
-					? this.verifier
-					: await this.verifier
-							.authenticate(request.header.authorization)
-							.then(key => (key?.audience != this.referer ? undefined : key))
+				? await this.verifier.authenticate(request.header.authorization, this.referer)
 				: undefined) ??
 			(method.includes("admin") &&
 			this.environment.adminSecret &&
@@ -58,6 +43,24 @@ export class Authenticator {
 		)
 	}
 	static open(environment: Environment, referer: string | undefined): Authenticator | gracely.Error {
-		return !referer ? gracely.client.missingHeader("Referer", "Referer required.") : new this(environment, referer)
+		return !environment.issuer
+			? gracely.server.misconfigured("issuer", "Issuer is missing from configuration.")
+			: !environment.publicKey
+			? gracely.server.misconfigured("publicKey", "PublicKey is missing from configuration.")
+			: !environment.privateKey
+			? gracely.server.misconfigured("privateKey", "PrivateKey is missing from configuration.")
+			: !referer
+			? gracely.client.missingHeader("Referer", "Referer required.")
+			: new this(
+					environment,
+					referer,
+					model.User.Key.Issuer.create(
+						environment.issuer,
+						referer, // audience
+						environment.publicKey,
+						environment.privateKey
+					),
+					model.User.Key.Verifier.create(environment.publicKey)
+			  )
 	}
 }

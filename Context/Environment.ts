@@ -24,14 +24,16 @@ export interface Environment extends Record<string, undefined | string | Durable
 	privateKey?: string
 	/** The issuers name in JWT eg: userwidgets */
 	issuer?: string
-	/** kv binding (Not used...) */
-	store?: KVNamespace
+	/** kv binding
+	 * partition: invite| is used for jwt shortening
+	 */
+	userwidgetsStore?: KVNamespace
 	/** Binding for users */
 	userNamespace?: DurableObjectNamespace
 	/** binding for users and organizations */
 	applicationNamespace?: DurableObjectNamespace
 	// See README.md for email-settings.
-	/** The email adress users see in the from field in emails. eg: no-reply@example.com */
+	/** The email address users see in the from field in emails. eg: no-reply@example.com */
 	email?: string
 	/**
 	 * RSA private key for dkim

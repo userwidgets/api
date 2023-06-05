@@ -6,15 +6,16 @@ import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: model.User.Readable | gracely.Error
-	const key = gracely.Error.is(context.authenticator)
+	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
+
 	if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!key)
+	else if (!credentials)
 		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(key))
-		result = key
+	else if (gracely.Error.is(credentials))
+		result = credentials
 	else if (!request.parameter.email)
 		result = gracely.client.invalidPathArgument(
 			"/user/:email",
@@ -24,22 +25,22 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		)
 	else
 		result =
-			(result = await context.users.fetch(request.parameter.email)) && key.permissions["*"]?.user?.read
+			(result = await context.users.fetch(request.parameter.email)) && credentials.permissions["*"]?.user?.read
 				? result
-				: gracely.Error.is(result) || result.email == key.email
+				: gracely.Error.is(result) || result.email == credentials.email
 				? result
-				: Object.keys(key.permissions)
+				: Object.keys(credentials.permissions)
 						.filter(id => id != "*")
 						.find(
 							organizationId =>
-								key.permissions[organizationId]?.user?.read &&
+								credentials.permissions[organizationId]?.user?.read &&
 								!gracely.Error.is(result) &&
 								organizationId in result.permissions
-						) && key.permissions["*"]?.organization?.read
+						) && credentials.permissions["*"]?.organization?.read
 				? result
 				: (result.permissions = Object.fromEntries(
 						Object.entries(result.permissions).filter(
-							([organizationId, _]) => organizationId != "*" && organizationId in key.permissions
+							([organizationId, _]) => organizationId != "*" && organizationId in credentials.permissions
 						)
 				  )) && result
 	return result

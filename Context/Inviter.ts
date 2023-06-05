@@ -35,8 +35,8 @@ export class Inviter {
 		return this.verifier.verify(token, ...(audience.length ? audience : [this.referer]))
 	}
 	static open(environment: Environment, referer: string | undefined): Inviter | gracely.Error {
-		return !environment.store
-			? gracely.server.misconfigured("store", "missing kv binding.")
+		return !environment.userwidgetsStore
+			? gracely.server.misconfigured("userwidgetsStore", "missing kv binding.")
 			: !referer
 			? gracely.client.missingHeader("Referer", "Referer required.")
 			: !environment.issuer
@@ -48,7 +48,7 @@ export class Inviter {
 			: new this(
 					storage.KeyValueStore.partition(
 						storage.KeyValueStore.Json.create<model.User.Invite.Creatable>(
-							storage.KeyValueStore.open(environment.store)
+							storage.KeyValueStore.open(environment.userwidgetsStore)
 						),
 						"invite|"
 					),

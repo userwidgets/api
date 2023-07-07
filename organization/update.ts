@@ -5,8 +5,13 @@ import { common } from "../common"
 import { Context } from "../Context"
 import { router } from "../router"
 
+type Response =
+	| gracely.Error
+	| { organization: gracely.Error }
+	| { organization: model.Organization; feedback: model.User.Feedback[] | gracely.Error }
+
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: model.User.Feedback.Invitation[] | gracely.Error
+	let result: Response
 	const emails: string[] | any = await request.body
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
@@ -43,7 +48,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 		const organizationId = request.parameter.organizationId
 		const issuer = context.inviter
 		const users = context.users
-		const neophytes = await context.applications.updateOrganization(request.parameter.organizationId, emails)
+		const neophytes = await context.applications.organizations.update(request.parameter.organizationId, emails, url)
 		result = gracely.Error.is(neophytes)
 			? neophytes
 			: await Promise.all(

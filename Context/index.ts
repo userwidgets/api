@@ -15,7 +15,7 @@ export class Context {
 	}
 	#applications?: Applications | gracely.Error
 	get applications(): Applications | gracely.Error {
-		return (this.#applications ??= Applications.open(this.environment, this.referer))
+		return (this.#applications ??= Applications.open(this))
 	}
 	#users?: Users | gracely.Error
 	get users(): Users | gracely.Error {
@@ -88,6 +88,7 @@ export class Context {
 			const httpRequest = http.Request.from(request)
 			result = await router.handle(httpRequest, new Context(environment, httpRequest))
 		} catch (e) {
+			console.log(e)
 			const details = (typeof e == "object" && e && e.toString()) || undefined
 			result = http.Response.create(gracely.server.unknown(details, "exception"))
 		}

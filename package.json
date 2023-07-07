@@ -86,6 +86,7 @@
     "cloudly-storage": "^0.9.3",
     "cryptly": "^3.0.4",
     "gracely": "^2.0.4",
+    "isly": "^0.1.8",
     "isoly": "^2.0.16"
   }
 }

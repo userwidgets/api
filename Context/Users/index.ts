@@ -1,6 +1,6 @@
 import * as gracely from "gracely"
 import * as model from "@userwidgets/model"
-import * as common from "../../common"
+import { common } from "../../common"
 import { Environment } from "../Environment"
 
 export class Users {

@@ -1,6 +1,7 @@
-import * as gracely from "gracely"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { isoly } from "isoly"
+import { userwidgets } from "@userwidgets/model"
+import { http } from "cloudly-http"
 import { common } from "../common"
 import { Context } from "../Context"
 import { router } from "../router"
@@ -8,94 +9,71 @@ import { router } from "../router"
 type Response =
 	| gracely.Error
 	| { organization: gracely.Error }
-	| { organization: model.Organization; feedback: model.User.Feedback[] | gracely.Error }
+	| {
+			organization: userwidgets.Organization
+			invites: userwidgets.User.Feedback.Invitation[]
+			removals: userwidgets.User.Feedback.Notification[]
+	  }
 
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: Response
-	const emails: string[] | any = await request.body
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
 	const url: URL | undefined = common.url.parse(request.search.url)
+	const body = await request.body
+	const organization = userwidgets.Organization.Changeable.type.get(body)
+	const entityTag = request.header.ifMatch?.at(0)
 
-	if (gracely.Error.is(context.applications))
-		result = context.applications
-	else if (gracely.Error.is(context.users))
-		result = context.users
-	else if (request.url == url)
-		result = gracely.client.invalidQueryArgument("url", "string", "Invalid url")
-	else if (!credentials)
-		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(credentials))
-		result = credentials
-	else if (!createIsArrayOf((value): value is string => typeof value == "string")(emails))
-		result = gracely.client.invalidContent("email", "Request body invalid.")
-	else if (!request.parameter.organizationId)
-		result = gracely.client.invalidPathArgument(
+	if (!organization)
+		result = gracely.client.flawedContent(userwidgets.Organization.Changeable.flaw(body))
+	else if (!request.parameter.id)
+		result = result = gracely.client.invalidPathArgument(
 			"/organization/user/:organizationId",
 			"organizationId",
 			"string",
 			"variable missing from url"
 		)
-	else if (
-		!credentials.permissions["*"]?.user?.write &&
-		!credentials.permissions[request.parameter.organizationId]?.user?.write
-	)
+	else if (!entityTag)
+		result = gracely.client.missingHeader("If-Match", "If-Match header must contain an entity tag.")
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
+		result = gracely.client.malformedHeader("ifMatch", "If-Match header must contain a valid entity tag.")
+	else if (gracely.Error.is(context.applications))
+		result = context.applications
+	else if (gracely.Error.is(credentials))
+		result = credentials
+	else if (!credentials)
 		result = gracely.client.unauthorized()
-	else if (gracely.Error.is(context.inviter))
-		result = context.inviter
+	else if (!credentials.permissions["*"]?.user?.write && !credentials.permissions[request.parameter.id]?.user?.write)
+		result = gracely.client.unauthorized()
 	else {
-		const organizationId = request.parameter.organizationId
-		const issuer = context.inviter
-		const users = context.users
-		const neophytes = await context.applications.organizations.update(request.parameter.organizationId, emails, url)
-		result = gracely.Error.is(neophytes)
-			? neophytes
-			: await Promise.all(
-					neophytes.map(async email => {
-						let result: model.User.Feedback.Invitation
-						const invite = await issuer.create({
-							email: email,
-							active: gracely.Error.is(await users.fetch(email)) ? false : true,
-							permissions: {
-								[organizationId]: {
-									user: { read: true, write: true },
-								},
-							},
-						})
-						if (!invite)
-							result = gracely.server.backendFailure("failed to sign invite.")
-						else {
-							if (url)
-								url.searchParams.set(
-									model.Configuration.addDefault(
-										{ inviteParameterName: context.environment.inviteParameterName },
-										"inviteParameterName"
-									).inviteParameterName,
-									invite
-								)
-							result = {
-								email,
-								invite,
-								...(url && {
-									response: await context.email(
-										email,
-										`You have been invited to join an organization.`,
-										`Invitation: ${url}`
-									),
-								}),
-							}
-						}
-						return result
+		const response = await context.applications.organizations.update(request.parameter.id, organization, entityTag)
+		result = response
+		if (url && !gracely.Error.is(response)) {
+			response.invites.map(async invite => {
+				const result = { ...invite }
+				if (!gracely.Error.is(invite)) {
+					const inviteUrl = new URL(url.href)
+					inviteUrl.searchParams.set(
+						userwidgets.Configuration.addDefault(
+							{ inviteParameterName: context.environment.inviteParameterName },
+							"inviteParameterName"
+						).inviteParameterName,
+						invite.invite
+					)
+					Object.assign(result, {
+						response: await context.email(
+							invite.email,
+							`You have been invited to join an organization.`,
+							`Invitation: ${inviteUrl}`
+						),
 					})
-			  )
+				}
+				return result
+			})
+		}
 	}
-
 	return result
 }
 
-router.add("PATCH", "/organization/user/:organizationId", update)
-
-function createIsArrayOf<T>(is: (value: any | T) => value is T): (value: any | T[]) => value is T[] {
-	return (value): value is T[] => Array.isArray(value) && value.every(is)
-}
+router.add("PATCH", "/organization/:id", update)

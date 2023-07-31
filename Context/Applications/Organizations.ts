@@ -1,27 +1,7 @@
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
-import { isly } from "isly"
 import { common } from "../../common"
 import { Inviter } from "../Inviter"
-
-namespace Response {
-	export type Post = userwidgets.Organization
-	export type Get = userwidgets.Organization
-	export type List = userwidgets.Organization[]
-	export namespace List {
-		export const type = isly.array(userwidgets.Organization.type)
-	}
-	export type Patch = {
-		new: userwidgets.Organization
-		old: userwidgets.Organization
-	}
-	export namespace Patch {
-		export const type = isly.object<Patch>({
-			new: userwidgets.Organization.type,
-			old: userwidgets.Organization.type,
-		})
-	}
-}
 
 export class Organizations {
 	constructor(
@@ -39,54 +19,56 @@ export class Organizations {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
 	async create(organization: userwidgets.Organization.Creatable): Promise<userwidgets.Organization | gracely.Error> {
-		return await this.application().post<Response.Post>(`organization`, organization)
+		return await this.application().post<userwidgets.Organization>(`organization`, organization)
 	}
 	async fetch(id: userwidgets.Organization.Identifier): Promise<userwidgets.Organization | gracely.Error> {
-		return await this.application().get<Response.Get>(`organization/${id}`)
+		return await this.application().get<userwidgets.Organization>(`organization/${id}`)
 	}
 	async list(ids?: userwidgets.Organization.Identifier[]): Promise<userwidgets.Organization[] | gracely.Error> {
 		const search = ids?.map(id => `id=${id}`).join("&")
-		return await this.application().get<Response.List>(`organization?${search}`)
+		return await this.application().get<userwidgets.Organization[]>(`organization?${search}`)
 	}
-	// continue here when coming back
 	async update(
 		id: userwidgets.Organization.Identifier,
 		organization: userwidgets.Organization.Changeable,
-		url?: URL
-	): Promise<userwidgets.Organization | gracely.Error> {
+		entityTag: string
+	): Promise<
+		| {
+				organization: userwidgets.Organization
+				invites: { email: string; invite: string }[]
+				removals: { email: string }[]
+		  }
+		| gracely.Error
+	> {
 		let result: Awaited<ReturnType<Organizations["update"]>>
-		const response = await this.application().patch<Response.Patch>(`organization/${id}`, organization)
-		if (!Response.Patch.type.is(response))
-			result = response
+		const current = await this.application().get<userwidgets.Organization>(`organization/${id}`)
+		if (!userwidgets.Organization.is(current))
+			result = current
 		else {
-			// send invites instead. do not force invite a user without interaction.
-			result = response.new
-			const existing = (
-				organization.users &&
-				(await Promise.all(
-					organization.users.map(async email => [await this.user(email).get<userwidgets.User>("user"), email] as const)
-				))
-			)?.reduce(
-				(result, [response, email]) => (gracely.Error.is(response) ? result : result.add(email)),
-				new Set<string>()
-			)
-			// send invites instead. do not force invite a user without interaction.
-			await Promise.all(
-				response.old.users
-					.filter(email => !response.new.users.includes(email))
-					.map(
-						async email =>
-							existing?.has(email) && this.user(email).patch<userwidgets.User>(`user`, { permissions: { [id]: false } })
+			const response = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
+				ifMatch: [entityTag],
+				contentType: "application/json",
+			})
+			if (!userwidgets.Organization.is(response))
+				result = response
+			else {
+				const removed = current.users.filter(user => !response.users.includes(user))
+				const added = response.users.filter(user => !current.users.includes(user))
+				const invites = (
+					await Promise.all(
+						added.map(async user => {
+							const invite = await this.context.inviter.create({
+								email: user,
+								active: !gracely.Error.is(await this.user(user).get<userwidgets.User>("user")),
+								permissions: { [id]: {} },
+							})
+							return !invite ? undefined : { email: user, invite: invite }
+						})
 					)
-			)
-			// send invites instead. do not force invite a user without interaction.
-			const newUsers = await Promise.all(
-				response.new.users.filter(email => !response.old.users.includes(email))
-				// .map(async email => this.user(email).post<userwidgets.User>(`user`, { permissions: { [id]: {} } }))
-			)
-			// .filter(userwidgets.User.is)
-			// .map(async user => existing?.has)
-			// .filter(userwidgets.User.is).map(user => existing)
+				).filter((invite): invite is Exclude<typeof invite, undefined> => !!invite)
+				await Promise.all(removed.map(async user => this.user(user).delete(`user`)))
+				result = { organization: response, invites: invites, removals: removed.map(user => ({ email: user })) }
+			}
 		}
 		return result
 	}

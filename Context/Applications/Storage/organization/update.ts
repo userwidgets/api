@@ -1,37 +1,47 @@
-import * as gracely from "gracely"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { isoly } from "isoly"
+import { userwidgets } from "@userwidgets/model"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
-export async function update(request: http.Request, context: Context): Promise<string[] | gracely.Error> {
-	let result: gracely.Error | string[]
-	const users: string[] | any = await request.body
-	const application = await context.state.storage.get<model.Application>("data")
-	if (!application)
-		result = gracely.client.notFound()
-	else if (!model.Application.is(application))
-		result = gracely.client.invalidContent("model.Organization", "The requested organization is invalid.")
-	else if (!request.parameter.organizationId)
+export async function update(
+	request: http.Request,
+	context: Context
+): Promise<userwidgets.Organization | gracely.Error> {
+	let result: Awaited<ReturnType<typeof update>>
+	const body = await request.body
+	const organization = userwidgets.Organization.Changeable.type.get(body)
+	const entityTag = request.header.ifMatch?.at(0)
+
+	if (gracely.Error.is(context.organizations))
+		result = context.organizations
+	else if (!request.parameter.id)
 		result = gracely.client.invalidPathArgument(
-			"/organization/user/:organizationId",
-			"organizationId",
+			"/organization/user/:id",
+			"id",
 			"string",
-			"organizationId is missing"
+			"id must be specified in the URL."
 		)
-	else if (!createIsArrayOf((value): value is string => typeof value == "string")(users))
-		result = gracely.client.malformedContent("string[]", "string[]", "string[] where malformed")
+	else if (!entityTag)
+		result = gracely.client.missingHeader("If-Match", "If-Match header must contain an entity tag.")
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
+		result = gracely.client.malformedHeader("If-Match", "Expected If-Match to be a date or *.")
+	else if (!organization)
+		result = gracely.client.flawedContent(userwidgets.Organization.Changeable.flaw(body))
 	else {
-		const existing = new Set(application.organizations[request.parameter.organizationId].users)
-		const missing = users.filter(user => !existing.has(user))
-		application.organizations[request.parameter.organizationId].users.push(...(result = missing))
-		await context.state.storage.put("data", application)
+		const current = await context.organizations.fetch(request.parameter.id)
+		if (!current)
+			result = gracely.client.notFound()
+		else if (entityTag != "*" && entityTag < current.value.modified)
+			result = result = gracely.client.entityTagMismatch("Requested delegation have already changed.")
+		else
+			result =
+				(await context.organizations.update(request.parameter.id, organization, { current }))?.value ??
+				gracely.client.notFound()
 	}
+
 	return result
 }
 
-router.add("PATCH", "/organization/user/:organizationId", update)
-
-function createIsArrayOf<T>(is: (value: any | T) => value is T): (value: any | T[]) => value is T[] {
-	return (value): value is T[] => Array.isArray(value) && value.every(is)
-}
+router.add("PATCH", "/organization/:id", update)

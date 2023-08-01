@@ -12,7 +12,7 @@ export interface Result {
 
 export class Organizations {
 	private constructor(private readonly context: { applications: Applications }) {}
-	async fetch(id: userwidgets.Organization.Identifier) {
+	async fetch(id: userwidgets.Organization.Identifier): Promise<Result | undefined> {
 		const application = await this.context.applications.fetch()
 		return !application || !application.organizations[id]
 			? undefined
@@ -21,7 +21,7 @@ export class Organizations {
 	async update(
 		id: userwidgets.Organization.Identifier,
 		organization: userwidgets.Organization.Changeable,
-		options?: { current: Awaited<ReturnType<Organizations["fetch"]>> }
+		options?: { current?: Result }
 	): Promise<Result | undefined> {
 		let result: Awaited<ReturnType<Organizations["update"]>>
 		const application = options?.current?.application ?? (await this.context.applications.fetch())

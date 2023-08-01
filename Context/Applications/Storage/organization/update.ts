@@ -17,12 +17,7 @@ export async function update(
 	if (gracely.Error.is(context.organizations))
 		result = context.organizations
 	else if (!request.parameter.id)
-		result = gracely.client.invalidPathArgument(
-			"/organization/user/:id",
-			"id",
-			"string",
-			"id must be specified in the URL."
-		)
+		result = gracely.client.invalidPathArgument("/organization/:id", "id", "string", "id must be specified in the URL.")
 	else if (!entityTag)
 		result = gracely.client.missingHeader("If-Match", "If-Match header must contain an entity tag.")
 	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))

@@ -29,7 +29,7 @@ export async function update(
 		if (!current)
 			result = gracely.client.notFound()
 		else if (entityTag != "*" && entityTag < current.value.modified)
-			result = result = gracely.client.entityTagMismatch("Requested delegation have already changed.")
+			result = result = gracely.client.entityTagMismatch("Requested organization is already changed.")
 		else
 			result =
 				(await context.organizations.update(request.parameter.id, organization, { current }))?.value ??

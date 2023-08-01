@@ -60,7 +60,7 @@ export class Organizations {
 							const invite = await this.context.inviter.create({
 								email: user,
 								active: !gracely.Error.is(await this.user(user).get<userwidgets.User>("user")),
-								permissions: { [id]: {} },
+								permissions: { [id]: { user: { read: true, write: true } } },
 							})
 							return !invite ? undefined : { email: user, invite: invite }
 						})

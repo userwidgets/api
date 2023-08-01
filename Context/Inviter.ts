@@ -32,7 +32,10 @@ export class Inviter {
 		token: string | undefined,
 		...audience: string[]
 	): Promise<model.User.Invite | undefined | gracely.Error> {
-		return this.verifier.verify(token, ...(audience.length ? audience : [this.referer]))
+		return this.verifier.verify(
+			token?.split(".").length == 3 ? token : token == undefined ? undefined : await this.fetch(token),
+			...(audience.length ? audience : [this.referer])
+		)
 	}
 	static open(environment: Environment, referer: string | undefined): Inviter | gracely.Error {
 		return !environment.userwidgetsStore

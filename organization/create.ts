@@ -33,7 +33,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.inviter))
 		result = context.inviter
 	else {
-		const created = await context.applications.createOrganization(organization)
+		const created = await context.applications.organizations.create(organization)
 
 		result = gracely.Error.is(created)
 			? { organization: created }

@@ -25,7 +25,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		)
 	else
 		result =
-			(result = await context.applications.fetchOrganization(request.parameter.organizationId)) &&
+			(result = await context.applications.organizations.fetch(request.parameter.organizationId)) &&
 			credentials.permissions["*"]?.organization?.read
 				? result
 				: gracely.Error.is(result)

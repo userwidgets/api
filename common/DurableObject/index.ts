@@ -1,5 +1,4 @@
 import { Client as DurableObjectClient } from "./Client"
-import { Context as DurableObjectContext } from "./Context"
 export class DurableObject<T> {
 	constructor(private readonly storage: DurableObjectStorage, private readonly prefix: string = "") {}
 	async get(key: string, options?: DurableObjectGetOptions): Promise<T | undefined> {
@@ -15,5 +14,4 @@ export class DurableObject<T> {
 export namespace DurableObject {
 	export type Client = DurableObjectClient
 	export const Client = DurableObjectClient
-	export type Context = DurableObjectContext
 }

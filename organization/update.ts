@@ -44,8 +44,18 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = credentials
 	else if (!credentials)
 		result = gracely.client.unauthorized()
-	else if (!credentials.permissions["*"]?.user?.write && !credentials.permissions[request.parameter.id]?.user?.write)
-		result = gracely.client.unauthorized()
+	else if (
+		organization.users &&
+		!credentials.permissions["*"]?.user?.write &&
+		!credentials.permissions[request.parameter.id]?.user?.write
+	)
+		result = gracely.client.unauthorized("forbidden")
+	else if (
+		(organization.permissions || organization.name) &&
+		!credentials.permissions["*"]?.organization?.write &&
+		!credentials.permissions[request.parameter.id]?.organization?.write
+	)
+		result = gracely.client.unauthorized("forbidden")
 	else {
 		const response = await context.applications.organizations.update(request.parameter.id, organization, entityTag)
 		result = response

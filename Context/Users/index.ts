@@ -5,54 +5,50 @@ import { Environment } from "../Environment"
 
 export class Users {
 	private constructor(
-		private readonly userNamespace: DurableObjectNamespace,
-		private readonly applicationNamespace: DurableObjectNamespace,
-		private readonly referer: string
+		private readonly context: {
+			userNamespace: DurableObjectNamespace
+			applicationNamespace: DurableObjectNamespace
+			referer: string
+		}
 	) {}
-	async create(user: userwidgets.User.Creatable): Promise<userwidgets.User.Key.Creatable | gracely.Error> {
-		const created = await common.DurableObject.Client.open(
-			this.userNamespace,
-			user.email.toLowerCase()
-		).post<userwidgets.User>("user", user, { application: this.referer, contentType: "application/json;charset=UTF-8" })
-		let result: userwidgets.User.Key.Creatable | gracely.Error = gracely.Error.is(created)
-			? created
-			: userwidgets.User.toKey(created, this.referer) ?? gracely.client.notFound()
-		if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
-			const application = await common.DurableObject.Client.open(
-				this.applicationNamespace,
-				this.referer
-			).get<userwidgets.Application>("application")
-			gracely.Error.is(application)
-				? (result = application)
-				: (result.permissions = {
-						...Object.fromEntries(Object.keys(application.organizations).map(id => [id, {}])),
-						...result.permissions,
-				  })
-		}
-		return result
+	private user(email: string): common.DurableObject.Client {
+		return common.DurableObject.Client.open(this.context.userNamespace, email.toLowerCase())
 	}
-	async update(invite: userwidgets.User.Invite): Promise<userwidgets.User.Key.Creatable | gracely.Error> {
-		const user = await common.DurableObject.Client.open(
-			this.userNamespace,
-			invite.email.toLowerCase()
-		).patch<userwidgets.User>("user", invite)
-		let result: userwidgets.User.Key.Creatable | gracely.Error = gracely.Error.is(user)
-			? user
-			: userwidgets.User.toKey(user, invite.audience) ?? gracely.client.notFound()
-		if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
-			const application = await common.DurableObject.Client.open(
-				this.applicationNamespace,
-				invite.audience
-			).get<userwidgets.Application>("application")
-			gracely.Error.is(application)
-				? (result = application)
-				: (result.permissions = {
-						...Object.fromEntries(Object.keys(application.organizations).map(id => [id, {}])),
-						...result.permissions,
-				  })
-		}
-		return result
+	async create(user: userwidgets.User.Creatable): Promise<userwidgets.User | gracely.Error> {
+		return this.user(user.email).post<userwidgets.User>("user", user, {
+			application: this.context.referer,
+			contentType: "application/json;charset=UTF-8",
+		})
 	}
+	// async create(user: userwidgets.User.Creatable): Promise<userwidgets.User.Key.Creatable | gracely.Error> {
+	// 	const created = await common.DurableObject.Client.open(
+	// 		this.userNamespace,
+	// 		user.email.toLowerCase()
+	// 	).post<userwidgets.User>("user", user, { application: this.referer, contentType: "application/json;charset=UTF-8" })
+	// 	let result: userwidgets.User.Key.Creatable | gracely.Error = gracely.Error.is(created)
+	// 		? created
+	// 		: userwidgets.User.toKey(created, this.referer) ?? gracely.client.notFound()
+	// 	if (!gracely.Error.is(result) && result.permissions["*"]?.application?.read) {
+	// 		const application = await common.DurableObject.Client.open(
+	// 			this.applicationNamespace,
+	// 			this.referer
+	// 		).get<userwidgets.Application>("application")
+	// 		gracely.Error.is(application)
+	// 			? (result = application)
+	// 			: (result.permissions = {
+	// 					...Object.fromEntries(Object.keys(application.organizations).map(id => [id, {}])),
+	// 					...result.permissions,
+	// 			  })
+	// 	}
+	// 	return result
+	// }
+	async join(invite: userwidgets.User.Invite): Promise<userwidgets.User | gracely.Error> {
+		return await this.user(invite.email).patch(`user`, invite)
+	}
+	async update(email: userwidgets.Email, user: userwidgets.User.Changeable): Promise<userwidgets.User | gracely.Error> {
+		return await this.user(email).patch<userwidgets.User>(`user`, user)
+	}
+
 	async authenticate(
 		credentials: userwidgets.User.Credentials
 	): Promise<userwidgets.User.Key.Creatable | gracely.Error> {

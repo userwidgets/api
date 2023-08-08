@@ -1,6 +1,6 @@
 {
   "name": "@userwidgets/api",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "The userwidgets app api.",
   "private": true,
   "repository": "https://github.com/userwidgets/api",
@@ -78,15 +78,16 @@
     "typescript": "^5.0.3"
   },
   "dependencies": {
-    "@userwidgets/model": "^0.4.6",
+    "@userwidgets/model": "../model",
     "authly": "^3.0.3",
     "cloudly-http": "^0.1.4",
     "cloudly-rest": "^0.1.2",
     "cloudly-router": "^0.1.1",
     "cloudly-storage": "^0.9.3",
     "cryptly": "^3.0.4",
+    "flagly": "^0.1.13",
     "gracely": "^2.0.4",
-    "isly": "^0.1.8",
+    "isly": "^0.1.10",
     "isoly": "^2.0.16"
   }
 }

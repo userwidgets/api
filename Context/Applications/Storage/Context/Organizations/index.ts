@@ -31,7 +31,10 @@ export class Organizations {
 			result = {
 				value: (application.organizations[id] = {
 					...application.organizations[id],
-					...organization,
+					...(({ users, ...organization }) => organization)(organization),
+					...(organization.users && {
+						users: organization.users.map(user => (typeof user == "object" ? user.user : user)),
+					}),
 					modified: isoly.DateTime.now(),
 				}),
 				application,

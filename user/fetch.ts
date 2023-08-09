@@ -1,11 +1,11 @@
-import * as gracely from "gracely"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { userwidgets } from "@userwidgets/model"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: model.User.Readable | gracely.Error
+	let result: userwidgets.User.Readable | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
@@ -24,25 +24,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 			"email must be specified in the URL."
 		)
 	else
-		result =
-			(result = await context.users.fetch(request.parameter.email)) && credentials.permissions["*"]?.user?.read
-				? result
-				: gracely.Error.is(result) || result.email == credentials.email
-				? result
-				: Object.keys(credentials.permissions)
-						.filter(id => id != "*")
-						.find(
-							organizationId =>
-								credentials.permissions[organizationId]?.user?.read &&
-								!gracely.Error.is(result) &&
-								organizationId in result.permissions
-						) && credentials.permissions["*"]?.organization?.read
-				? result
-				: (result.permissions = Object.fromEntries(
-						Object.entries(result.permissions).filter(
-							([organizationId, _]) => organizationId != "*" && organizationId in credentials.permissions
-						)
-				  )) && result
+		result = await context.users.fetch(request.parameter.email)
 	return result
 }
 

@@ -79,7 +79,7 @@
   },
   "dependencies": {
     "@userwidgets/model": "../model",
-    "authly": "^3.0.3",
+    "authly": "^3.0.6",
     "cloudly-http": "^0.1.4",
     "cloudly-rest": "^0.1.2",
     "cloudly-router": "^0.1.1",

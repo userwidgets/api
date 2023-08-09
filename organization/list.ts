@@ -1,11 +1,11 @@
-import * as gracely from "gracely"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { userwidgets } from "@userwidgets/model"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: model.Organization[] | gracely.Error
+	let result: userwidgets.Organization[] | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
@@ -17,27 +17,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (gracely.Error.is(credentials))
 		result = credentials
 	else
-		result =
-			(result = await context.applications.organizations.list(Object.keys(credentials.permissions))) &&
-			credentials.permissions["*"]?.organization?.read
-				? result
-				: gracely.Error.is(result)
-				? result
-				: (result = result.map(
-						organization => (
-							(organization.permissions = organization.permissions.filter(name => {
-								const permission = credentials.permissions[organization.id]
-								return (
-									(permission && (permission[name]?.read || permission[name]?.write)) ||
-									(credentials.permissions["*"] &&
-										(credentials.permissions["*"][name]?.read || credentials.permissions["*"][name]?.write))
-								)
-							})),
-							!credentials.permissions["*"]?.user?.read ||
-								(!credentials.permissions[organization.id] && (organization.users = [credentials.email])),
-							organization
-						)
-				  ))
+		result = await context.applications.organizations.list(credentials.permissions)
 	return result
 }
 

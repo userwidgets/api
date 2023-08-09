@@ -1,5 +1,3 @@
 import "./fetch"
 import "./list"
-import "./password"
-import "./name"
-import "./permission"
+import "./update"

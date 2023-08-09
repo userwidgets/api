@@ -18,20 +18,44 @@ export class Organizations {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
-	async create(organization: userwidgets.Organization.Creatable): Promise<userwidgets.Organization | gracely.Error> {
-		return await this.application().post<userwidgets.Organization>(`organization`, organization)
+	private filter(
+		permissions: userwidgets.User.Permissions,
+		organization: userwidgets.Organization
+	): userwidgets.Organization {
+		const result = organization
+		if (!this.user.arguments.Permissions.check(permissions, organization.id, "org.view", "user.view"))
+			result.users = []
+		return result
 	}
-	async fetch(id: userwidgets.Organization.Identifier): Promise<userwidgets.Organization | gracely.Error> {
-		return await this.application().get<userwidgets.Organization>(`organization/${id}`)
+	async create(
+		organization: userwidgets.Organization.Creatable,
+		permissions?: userwidgets.User.Permissions
+	): Promise<userwidgets.Organization | gracely.Error> {
+		const result = await this.application().post<userwidgets.Organization>(`organization`, organization)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: this.filter(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
-	async list(ids?: userwidgets.Organization.Identifier[]): Promise<userwidgets.Organization[] | gracely.Error> {
-		const search = ids?.map(id => `id=${id}`).join("&")
-		return await this.application().get<userwidgets.Organization[]>(`organization?${search}`)
+	async fetch(
+		id: userwidgets.Organization.Identifier,
+		permissions?: userwidgets.User.Permissions
+	): Promise<userwidgets.Organization | gracely.Error> {
+		const result = await this.application().get<userwidgets.Organization>(`organization/${id}`)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: this.filter(permissions, result) ?? gracely.client.unauthorized("forbidden")
+	}
+	async list(permissions?: userwidgets.User.Permissions): Promise<userwidgets.Organization[] | gracely.Error> {
+		const result = await this.application().get<userwidgets.Organization[]>(`organization`)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: result.map(organization => this.filter(permissions, organization))
 	}
 	async update(
 		id: userwidgets.Organization.Identifier,
 		organization: userwidgets.Organization.Changeable,
-		entityTag: string
+		entityTag: string,
+		permissions?: userwidgets.User.Permissions
 	): Promise<
 		| {
 				organization: userwidgets.Organization
@@ -52,22 +76,23 @@ export class Organizations {
 			if (!userwidgets.Organization.is(response))
 				result = response
 			else {
-				const removed = current.users.filter(user => !response.users.includes(user))
-				const added = response.users.filter(user => !current.users.includes(user))
+				const organization = permissions == undefined ? response : this.filter(permissions, response)
+				const removed = current.users.filter(user => !organization.users.includes(user))
+				const added = organization.users.filter(user => !current.users.includes(user))
 				const invites = (
 					await Promise.all(
 						added.map(async user => {
 							const invite = await this.context.inviter.create({
 								email: user,
 								active: !gracely.Error.is(await this.user(user).get<userwidgets.User>("user")),
-								permissions: { [id]: { user: { read: true, write: true } } },
+								permissions: { [id]: { user: { view: true, invite: true } } },
 							})
 							return !invite ? undefined : { email: user, invite: invite }
 						})
 					)
 				).filter((invite): invite is Exclude<typeof invite, undefined> => !!invite)
 				await Promise.all(removed.map(async user => this.user(user).delete(`user`)))
-				result = { organization: response, invites: invites, removals: removed.map(user => ({ email: user })) }
+				result = { organization: organization, invites: invites, removals: removed.map(user => ({ email: user })) }
 			}
 		}
 		return result

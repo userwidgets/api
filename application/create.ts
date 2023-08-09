@@ -15,9 +15,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else if (!model.Application.Creatable.is(application))
 		result = gracely.client.invalidContent("model.Application", "Request body invalid")
 	else if (!admin || gracely.Error.is(admin))
-		result = gracely.client.unauthorized(
-			`Not authorized for this action on userwidgets application. Received '${request.header.authorization}'`
-		)
+		result = gracely.client.unauthorized(`Not authorized for this action on userwidgets application.`)
 	else
 		result = await context.applications.create(application)
 	return result

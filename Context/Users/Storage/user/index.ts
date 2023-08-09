@@ -1,4 +1,3 @@
-import "./invite"
 import "./authenticate"
 import "./create"
 import "./fetch"

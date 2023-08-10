@@ -35,20 +35,15 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized("refresh")
 	else if (user.name && request.parameter.email != credentials.email)
 		result = gracely.client.unauthorized("forbidden")
-	else if (!user.permissions)
-		result = gracely.server.backendFailure("remove this one")
-	else {
-		// const permissions = user.permissions
-		Object.entries(user.permissions).some(
-			([id, permissions]) =>
-				!userwidgets.User.Permissions.check(credentials.permissions, id, "user.edit") ||
-				// how to make sure that the requester are allowed to give out the permissions it is trying to give out?
-				// dream call: userwidgets.User.Permissions.check(credentials.permissions, {[id]: permissions})
-				// this call would check that 
-				!userwidgets.User.Permissions.check(credentials.permissions, id, )
+	else if (
+		user.permissions &&
+		Object.keys(user.permissions).some(
+			id => !userwidgets.User.Permissions.check(credentials.permissions, id, "user.admin")
 		)
+	)
+		result = gracely.client.unauthorized("forbidden")
+	else
 		result = await context.users.update(request.parameter.email, user, entityTag, credentials.permissions)
-	}
 	return result
 }
 router.add("PATCH", "/user/:email", update)

@@ -59,7 +59,10 @@ export class Users {
 				result.name = name
 
 			if (permissions != undefined)
-				result.permissions[this.context.application] = permissions
+				result.permissions[this.context.application] = {
+					...result.permissions[this.context.application],
+					...permissions,
+				}
 
 			if (password != undefined)
 				if (!("old" in password))

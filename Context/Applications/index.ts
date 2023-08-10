@@ -26,7 +26,6 @@ export class Applications {
 	): userwidgets.Application {
 		const result = application
 		if (!userwidgets.User.Permissions.check(permissions, "*", "app.read")) {
-			result.permissions = []
 			result.organizations = Object.fromEntries(Object.entries(result.organizations).filter(([id]) => permissions[id]))
 		}
 		return result

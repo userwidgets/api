@@ -54,9 +54,7 @@ export class Organizations {
 			else {
 				const removed = current.users.filter(user => !response.users.includes(user))
 				const added = response.users.filter(user => !current.users.includes(user))
-				// needInvite = added (maybe some of them) + reinvites (all)
 				const needInvite = organization.users?.filter(userwidgets.Organization.Changeable.Invite.is)
-				// sendInvitesTo = added (all) + reinvites (all)
 				const sendInvitesTo = [...new Set([...added, ...(needInvite?.map(({ user }) => user) ?? [])])]
 				const invites = (
 					await Promise.all(

@@ -15,7 +15,7 @@ export class Applications {
 		},
 		inviter: Inviter
 	) {
-		this.organizations = new Organizations({ ...context, inviter })
+		this.organizations = new Organizations({ ...context, inviter, applications: this })
 	}
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)

@@ -3,7 +3,9 @@ import { userwidgets } from "@userwidgets/model"
 import { http } from "cloudly-http"
 import { common } from "../common"
 import { Context } from "../Context"
+import { Environment } from "../Context/Environment"
 import { Inviter } from "../Context/Inviter"
+import { Users } from "../Context/Users"
 import { router } from "../router"
 
 type Response =
@@ -45,18 +47,22 @@ export async function create(request: http.Request, context: Context): Promise<h
 			? { organization: created }
 			: {
 					organization: created,
-					feedback: await postProcess(created.id, organization, context, url, context.inviter),
+					feedback: await postProcess(
+						created.id,
+						organization,
+						{ inviter: context.inviter, users: context.users, environment: context.environment, email: context.email },
+						url
+					),
 			  }
 	}
 	return result
 }
 
 async function postProcess(
-	organizationId: string,
+	id: string,
 	organization: userwidgets.Organization.Creatable,
-	context: Context,
-	url: URL | undefined,
-	inviter: Inviter
+	context: { inviter: Inviter; users: Users; environment: Environment; email: Context["email"] },
+	url: URL | undefined
 ): Promise<userwidgets.User.Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
@@ -65,13 +71,11 @@ async function postProcess(
 				email: email,
 				active: !gracely.Error.is(context.users) && gracely.Error.is(await context.users.fetch(email)) ? false : true,
 				permissions: {
-					...(permissions?.[0] && { "*": permissions[0] }),
-					[organizationId]: permissions?.[1]
-						? permissions[1]
-						: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
+					...(permissions?.["*"] && { "*": permissions?.["*"] }),
+					...(permissions?.organization && { [id]: permissions.organization }),
 				},
 			}
-			const invite = await inviter.create(signable)
+			const invite = await context.inviter.create(signable)
 			if (!invite)
 				result = gracely.server.backendFailure("failed to sign.")
 			else {

@@ -2,12 +2,14 @@ import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
 import { Inviter } from "../Inviter"
+import { Applications } from "./index"
 
 export class Organizations {
 	constructor(
 		private readonly context: {
 			applicationNamespace: DurableObjectNamespace
 			userNamespace: DurableObjectNamespace
+			applications: Applications
 			inviter: Inviter
 			referer: string
 		}
@@ -23,7 +25,7 @@ export class Organizations {
 		organization: userwidgets.Organization
 	): userwidgets.Organization {
 		const result = organization
-		if (!this.user.arguments.Permissions.check(permissions, organization.id, "org.view", "user.view"))
+		if (!this.user.arguments.Permissions.check(permissions, organization.id, "org.view"))
 			result.users = []
 		return result
 	}

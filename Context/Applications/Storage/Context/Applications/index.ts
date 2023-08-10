@@ -24,7 +24,7 @@ export class Applications {
 	): Promise<userwidgets.Application | undefined> {
 		let result: userwidgets.Application | undefined
 		const current = await this.get()
-		if (!current)
+		if (current)
 			result = undefined
 		else
 			result = Application.model(await this.set(Application.from(application)))

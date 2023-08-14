@@ -15,7 +15,7 @@ export class Organizations {
 	async get(id: userwidgets.Organization.Identifier) {
 		return (await this.context.applications.get())?.organizations[id]
 	}
-	async set(organization: Omit<Organization, "modified">): Promise<Organization | undefined> {
+	private async set(organization: Omit<Organization, "modified">): Promise<Organization | undefined> {
 		const application = await this.context.applications.get()
 		return !application
 			? undefined
@@ -40,6 +40,19 @@ export class Organizations {
 		return !application || !application.organizations[id]
 			? undefined
 			: { value: Organization.model(application.organizations[id]), application: Application.model(application) }
+	}
+	async list(): Promise<Result[] | undefined> {
+		let result: Awaited<ReturnType<Organizations["list"]>>
+		const application = await this.context.applications.get()
+		if (!application)
+			result = undefined
+		else {
+			result = (await Promise.all(Object.keys(application.organizations).map(id => this.fetch(id)))).reduce<Result[]>(
+				(result, response) => [...result, ...[response ?? []].flat()],
+				[]
+			)
+		}
+		return result
 	}
 	async update(
 		id: userwidgets.Organization.Identifier,

@@ -25,7 +25,7 @@ export class Organizations {
 		organization: userwidgets.Organization
 	): userwidgets.Organization {
 		const result = organization
-		if (!this.user.arguments.Permissions.check(permissions, organization.id, "org.view"))
+		if (!userwidgets.User.Permissions.check(permissions, organization.id, "org.view"))
 			result.users = []
 		return result
 	}

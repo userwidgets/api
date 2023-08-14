@@ -46,7 +46,7 @@ export class Users {
 		else if (!(await Password.verify(credentials.password, current.password, this.context.secret)))
 			result = undefined
 		else
-			result = userwidgets.User.Key.Creatable.from(current)
+			result = userwidgets.User.Key.Creatable.from(User.model(current, this.context.application))
 		return result
 	}
 	async update(user: userwidgets.User.Changeable): Promise<userwidgets.User | undefined> {

@@ -37,13 +37,40 @@ export class Users {
 		user: userwidgets.User.Creatable,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
-		const result = await this.user(user.email).post<userwidgets.User>(`user`, user, {
+		let result: userwidgets.User | gracely.Error
+		const created = await this.user(user.email).post<userwidgets.User>(`user`, user, {
 			application: this.context.referer,
 			contentType: "application/json;charset=UTF-8",
 		})
-		return gracely.Error.is(result) || permissions == undefined
-			? result
-			: this.filter(permissions, result) ?? gracely.client.unauthorized("forbidden")
+		if (gracely.Error.is(created))
+			result = created
+		else {
+			const organizations = (
+				await Promise.all(
+					Object.keys((({ "*": _, ...permissions }) => permissions)(created.permissions)).map(
+						async id => await this.application().get<userwidgets.Organization>(`organization/${id}`)
+					)
+				)
+			).filter(userwidgets.Organization.is)
+			const results = await Promise.all(
+				organizations.map(
+					async ({ id, users }) =>
+						await this.application().patch<userwidgets.Organization>(
+							`organization/${id}`,
+							{
+								users: [...users, created.email],
+							},
+							{ ifMatch: ["*"], contentType: "application/json;charset=UTF-8" }
+						)
+				)
+			)
+			console.log(results)
+			result =
+				permissions == undefined
+					? created
+					: this.filter(permissions, created) ?? gracely.client.unauthorized("forbidden")
+		}
+		return result
 	}
 	async fetch(
 		email: userwidgets.Email,

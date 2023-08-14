@@ -14,7 +14,8 @@ type Response =
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Error | Response
-	const organization: userwidgets.Organization.Creatable | any = await request.body
+	const body: unknown = await request.body
+	const organization = userwidgets.Organization.Creatable.type.get(body)
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token", "admin")
@@ -24,8 +25,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = context.applications
 	else if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!userwidgets.Organization.Creatable.is(organization))
-		result = gracely.client.invalidContent("model.Organization", "Request body invalid")
+	else if (!organization)
+		result = gracely.client.flawedContent(userwidgets.Organization.Creatable.flaw(body))
 	else if (gracely.Error.is(credentials))
 		result = credentials
 	else if (

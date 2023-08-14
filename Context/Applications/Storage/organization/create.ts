@@ -21,7 +21,7 @@ export async function create(
 		result = gracely.server.backendFailure("unable to generate id")
 	else
 		result =
-			(await context.organizations.create({ ...organization, id }))?.value ??
+			(await context.organizations.create({ ...organization, id })) ??
 			gracely.server.backendFailure("Change this error")
 	return result
 }

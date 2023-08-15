@@ -71,7 +71,7 @@ export class Organizations {
 		| gracely.Error
 	> {
 		let result: Awaited<ReturnType<Organizations["update"]>>
-		let current = await this.application().get<userwidgets.Organization>(`organization/${id}`)
+		const current = await this.application().get<userwidgets.Organization>(`organization/${id}`)
 		if (!userwidgets.Organization.is(current))
 			result = current
 		else {
@@ -82,18 +82,21 @@ export class Organizations {
 			if (!userwidgets.Organization.is(updated))
 				result = updated
 			else {
-				updated = permissions == undefined ? updated : filters.organization(permissions, updated) ?? gracely.client.unauthorized("forbidden")
+				updated =
+					permissions == undefined
+						? updated
+						: filters.organization(permissions, updated) ?? gracely.client.unauthorized("forbidden")
 				if (gracely.Error.is(updated))
 					result = updated
 				else {
-					const users= {
+					const users = {
 						updated: updated.users,
 						current: current.users,
 					}
 					const removed = current.users.filter(user => !users.updated.includes(user))
 					const added = updated.users.filter(user => !users.current.includes(user))
 					const needInvite = organization.users?.filter(userwidgets.Organization.Changeable.Invite.is)
-				const sendInvitesTo = [...new Set([...added, ...(needInvite?.map(({ user }) => user) ?? [])])]
+					const sendInvitesTo = [...new Set([...added, ...(needInvite?.map(({ user }) => user) ?? [])])]
 					const invites = (
 						await Promise.all(
 							sendInvitesTo.map(async user => {

@@ -137,11 +137,11 @@ export class Users {
 					? result
 					: result.reduce<userwidgets.User[]>(
 							(result, user) =>
-								Object.keys(user.permissions).some(
-									id => !userwidgets.User.Permissions.check(permissions, id, "user.view")
+								Object.keys(user.permissions).some(id =>
+									userwidgets.User.Permissions.check(permissions, id, "user.view")
 								)
-									? result
-									: result.concat(filters.user(permissions, user) ?? []),
+									? result.concat(filters.user(permissions, user) ?? [])
+									: result,
 							[]
 					  )
 		}

@@ -20,7 +20,7 @@ export class Users {
 	}
 	async create(user: userwidgets.User.Creatable): Promise<userwidgets.User | undefined> {
 		let result: userwidgets.User | undefined
-		if (!this.get())
+		if (await this.get())
 			result = undefined
 		else
 			result = User.model(

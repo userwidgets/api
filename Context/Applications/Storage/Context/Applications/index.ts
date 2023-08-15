@@ -23,8 +23,7 @@ export class Applications {
 		application: userwidgets.Application.Creatable & { id: userwidgets.Application.Identifier }
 	): Promise<userwidgets.Application | undefined> {
 		let result: userwidgets.Application | undefined
-		const current = await this.get()
-		if (current)
+		if (await this.get())
 			result = undefined
 		else
 			result = Application.model(await this.set(Application.from(application)))

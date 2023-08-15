@@ -46,12 +46,12 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (
 		organization.users &&
-		userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit", "user.invite")
+		!userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit", "user.invite")
 	)
 		result = gracely.client.unauthorized("forbidden")
 	else if (
 		(organization.permissions || organization.name) &&
-		userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit")
+		!userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit")
 	)
 		result = gracely.client.unauthorized("forbidden")
 	else {

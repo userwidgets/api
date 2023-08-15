@@ -86,15 +86,21 @@ export class Organizations {
 					}
 					const removed = current.users.filter(user => !users.updated.includes(user))
 					const added = updated.users.filter(user => !users.current.includes(user))
-					const needInvite = organization.users?.filter(userwidgets.Organization.Changeable.Invite.is)
-					const sendInvitesTo = [...new Set([...added, ...(needInvite?.map(({ user }) => user) ?? [])])]
+					const invited = [...added, ...(organization.users ?? [])].reduce(
+						(result, invited) =>
+							typeof invited == "string"
+								? result.set(invited, ["user.view"])
+								: result.set(invited.user, invited.permissions),
+						new Map<userwidgets.Email, string[]>()
+					)
 					const invites = (
 						await Promise.all(
-							sendInvitesTo.map(async user => {
+							Array.from(invited.entries()).map(async ([user, permissions]) => {
 								const invite = await this.context.inviter.create({
 									email: user,
 									active: !gracely.Error.is(await this.user(user).get<userwidgets.User>("user")),
-									permissions: { [id]: { user: { view: true, invite: true } } },
+									permissions:
+										userwidgets.User.Permissions.set(userwidgets.User.Permissions.type, {}, id, ...permissions) ?? {},
 								})
 								return !invite ? undefined : { email: user, invite: invite }
 							})

@@ -43,19 +43,10 @@ export class Organizations {
 		const result = await this.application().get<userwidgets.Organization[]>(`organization`)
 		return gracely.Error.is(result) || permissions == undefined
 			? result
-			: result
-					// is this needed?
-					// .map(organization => filters.organization(permissions, organization))
-					.reduce<userwidgets.Organization[]>(
-						(result, organization) => result.concat(filters.organization(permissions, organization) ?? []),
-						[]
-					)
-		// is this needed?
-		// .filter(
-		// 	organization =>
-		// 		organization.id in permissions ||
-		// 		userwidgets.User.Permissions.check(permissions, organization.id, "org.view")
-		// )
+			: result.reduce<userwidgets.Organization[]>(
+					(result, organization) => result.concat(filters.organization(permissions, organization) ?? []),
+					[]
+			  )
 	}
 	async update(
 		id: userwidgets.Organization.Identifier,

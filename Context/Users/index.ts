@@ -114,7 +114,15 @@ export class Users {
 			result =
 				permissions == undefined
 					? result
-					: result.reduce<userwidgets.User[]>((result, user) => [...result, filters.user(permissions, user)], [])
+					: result.reduce<userwidgets.User[]>(
+							(result, user) =>
+								Object.keys(user.permissions).some(
+									id => !userwidgets.User.Permissions.check(permissions, id, "user.view")
+								)
+									? result
+									: result.concat(filters.user(permissions, user)),
+							[]
+					  )
 		}
 		return result
 	}

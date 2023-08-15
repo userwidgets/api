@@ -34,16 +34,16 @@ export namespace filters {
 	export function application(
 		permissions: userwidgets.User.Permissions,
 		application: userwidgets.Application
-	): userwidgets.Application {
+	): userwidgets.Application | undefined {
 		const result: ReturnType<typeof filters.application> = application
 		if (!userwidgets.User.Permissions.check(permissions, "*", "app.view")) {
 			result.organizations = Object.fromEntries(
-				Object.entries(result.organizations).filter(([id]) => id in permissions)
+				Object.entries(result.organizations).filter(([id, o]) => id in permissions && organization(permissions, o))
 			)
-			// result.organizations = Object.entries(result.organizations).reduce<userwidgets.Application["organizations"]>(
-			// 	(result, [id, o]) => ({ ...result, [id]: organization(permissions, o) }),
-			// 	{}
-			// )
+			result.organizations = Object.entries(result.organizations).reduce((result, [id, o]) => {
+				const filtered = id in permissions && organization(permissions, o)
+				return !filtered ? result : Object.assign(result, { [id]: filtered })
+			}, {})
 		}
 		return result
 	}

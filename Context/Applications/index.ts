@@ -23,7 +23,9 @@ export class Applications {
 	}
 	async fetch(permissions?: userwidgets.User.Permissions): Promise<userwidgets.Application | gracely.Error> {
 		const result = await this.application().get<userwidgets.Application>(`application`)
-		return gracely.Error.is(result) || permissions == undefined ? result : filters.application(permissions, result)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	async create(
 		application: userwidgets.Application.Creatable,
@@ -33,7 +35,9 @@ export class Applications {
 			`application/${this.context.referer}`,
 			application
 		)
-		return gracely.Error.is(result) || permissions == undefined ? result : filters.application(permissions, result)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	static open(context: Context): Applications | gracely.Error {
 		return !context.referer

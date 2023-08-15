@@ -24,7 +24,7 @@ export namespace filters {
 		organization: userwidgets.Organization
 	): userwidgets.Organization | undefined {
 		let result: ReturnType<typeof filters.organization> = organization
-		if (!userwidgets.User.Permissions.check(permissions, organization.id, "org.view"))
+		if (!userwidgets.User.Permissions.check(permissions, organization.id, "user.view"))
 			if (!(organization.id in permissions))
 				result = undefined
 			else

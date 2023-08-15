@@ -50,7 +50,10 @@ export class Users {
 				)
 			)
 			console.log(results)
-			result = permissions == undefined ? created : filters.user(permissions, created)
+			result =
+				permissions == undefined
+					? created
+					: filters.user(permissions, created) ?? gracely.client.unauthorized("forbidden")
 		}
 		return result
 	}
@@ -62,7 +65,9 @@ export class Users {
 			application: this.context.referer,
 			contentType: "application/json;charset=UTF-8",
 		})
-		return gracely.Error.is(result) || permissions == undefined ? result : filters.user(permissions, result)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: filters.user(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	async authenticate(credentials: userwidgets.User.Credentials): Promise<userwidgets.User | gracely.Error> {
 		return await this.user(credentials.user).post<userwidgets.User>(`user/authenticate`, credentials, {
@@ -87,7 +92,9 @@ export class Users {
 			ifMatch: [entityTag],
 			contentType: "application/json;charset=UTF-8",
 		})
-		return gracely.Error.is(result) || permissions == undefined ? result : filters.user(permissions, result)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: filters.user(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	async list(permissions?: userwidgets.User.Permissions): Promise<userwidgets.User[] | gracely.Error> {
 		let result: Awaited<ReturnType<Users["list"]>>
@@ -120,7 +127,7 @@ export class Users {
 									id => !userwidgets.User.Permissions.check(permissions, id, "user.view")
 								)
 									? result
-									: result.concat(filters.user(permissions, user)),
+									: result.concat(filters.user(permissions, user) ?? []),
 							[]
 					  )
 		}

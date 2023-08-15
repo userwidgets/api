@@ -24,7 +24,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 			"email must be specified in the URL."
 		)
 	else
-		result = await context.users.fetch(request.parameter.email)
+		result = await context.users.fetch(request.parameter.email, credentials.permissions)
 	return result
 }
 

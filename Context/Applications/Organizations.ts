@@ -71,26 +71,32 @@ export class Organizations {
 		| gracely.Error
 	> {
 		let result: Awaited<ReturnType<Organizations["update"]>>
-		const current = await this.application().get<userwidgets.Organization>(`organization/${id}`)
+		let current = await this.application().get<userwidgets.Organization>(`organization/${id}`)
 		if (!userwidgets.Organization.is(current))
 			result = current
 		else {
-			const response = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
+			let updated = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
 				ifMatch: [entityTag],
 				contentType: "application/json",
 			})
-			if (!userwidgets.Organization.is(response))
-				result = response
+			if (!userwidgets.Organization.is(updated))
+				result = updated
 			else {
-				const organization = permissions == undefined ? response : filters.organization(permissions, response)
-				if (!organization)
-					result = gracely.client.unauthorized("forbidden")
+				updated = permissions == undefined ? updated : filters.organization(permissions, updated) ?? gracely.client.unauthorized("forbidden")
+				if (gracely.Error.is(updated))
+					result = updated
 				else {
-					const removed = current.users.filter(user => !organization?.users.includes(user))
-					const added = organization.users.filter(user => !current.users.includes(user))
+					const users= {
+						updated: updated.users,
+						current: current.users,
+					}
+					const removed = current.users.filter(user => !users.updated.includes(user))
+					const added = updated.users.filter(user => !users.current.includes(user))
+					const needInvite = organization.users?.filter(userwidgets.Organization.Changeable.Invite.is)
+				const sendInvitesTo = [...new Set([...added, ...(needInvite?.map(({ user }) => user) ?? [])])]
 					const invites = (
 						await Promise.all(
-							added.map(async user => {
+							sendInvitesTo.map(async user => {
 								const invite = await this.context.inviter.create({
 									email: user,
 									active: !gracely.Error.is(await this.user(user).get<userwidgets.User>("user")),
@@ -101,7 +107,7 @@ export class Organizations {
 						)
 					).filter((invite): invite is Exclude<typeof invite, undefined> => !!invite)
 					await Promise.all(removed.map(async user => this.user(user).delete(`user`)))
-					result = { organization: organization, invites: invites, removals: removed.map(user => ({ email: user })) }
+					result = { organization: updated, invites: invites, removals: removed.map(user => ({ email: user })) }
 				}
 			}
 		}

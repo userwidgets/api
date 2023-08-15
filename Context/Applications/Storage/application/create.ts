@@ -18,7 +18,7 @@ export async function create(
 	else
 		result =
 			(await context.applications.create({ ...application, id: request.parameter.id })) ??
-			gracely.server.backendFailure("change this error")
+			gracely.client.invalidContent("Application", "This application already exists.")
 	return result
 }
 

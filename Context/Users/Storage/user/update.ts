@@ -57,7 +57,7 @@ async function join(context: Context, invite: userwidgets.User.Invite): Promise<
 		result = context.users
 	else {
 		const user = await context.users.join(invite)
-		result = !user ? gracely.server.backendFailure("change this error") : user
+		result = !user ? gracely.client.invalidContent("User.Invite", "Unable to join this organization.") : user
 	}
 	return result
 }

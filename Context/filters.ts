@@ -1,5 +1,5 @@
 import { userwidgets } from "@userwidgets/model"
-
+// This file is needed to avoid circular dependencies between Applications/index, Applications/Organizations and Users/index
 export namespace filters {
 	export function user(
 		permissions: userwidgets.User.Permissions,
@@ -37,9 +37,6 @@ export namespace filters {
 	): userwidgets.Application | undefined {
 		const result: ReturnType<typeof filters.application> = application
 		if (!userwidgets.User.Permissions.check(permissions, "*", "app.view")) {
-			result.organizations = Object.fromEntries(
-				Object.entries(result.organizations).filter(([id, o]) => id in permissions && organization(permissions, o))
-			)
 			result.organizations = Object.entries(result.organizations).reduce((result, [id, o]) => {
 				const filtered = id in permissions && organization(permissions, o)
 				return !filtered ? result : Object.assign(result, { [id]: filtered })

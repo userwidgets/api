@@ -1,6 +1,7 @@
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
+import { filters } from "../filters"
 import { Inviter } from "../Inviter"
 import { Applications } from "./index"
 
@@ -20,38 +21,40 @@ export class Organizations {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
-	private filter(
-		permissions: userwidgets.User.Permissions,
-		organization: userwidgets.Organization
-	): userwidgets.Organization {
-		const result = organization
-		if (!userwidgets.User.Permissions.check(permissions, organization.id, "org.view"))
-			result.users = []
-		return result
-	}
+	// private filter(
+	// 	permissions: userwidgets.User.Permissions,
+	// 	organization: userwidgets.Organization
+	// ): userwidgets.Organization {
+	// 	const result = organization
+	// 	if (!userwidgets.User.Permissions.check(permissions, organization.id, "org.view"))
+	// 		result.users = []
+	// 	return result
+	// }
 	async create(
 		organization: userwidgets.Organization.Creatable,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.Organization | gracely.Error> {
 		const result = await this.application().post<userwidgets.Organization>(`organization`, organization)
-		return gracely.Error.is(result) || permissions == undefined
-			? result
-			: this.filter(permissions, result) ?? gracely.client.unauthorized("forbidden")
+		return gracely.Error.is(result) || permissions == undefined ? result : filters.organization(permissions, result)
 	}
 	async fetch(
 		id: userwidgets.Organization.Identifier,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.Organization | gracely.Error> {
 		const result = await this.application().get<userwidgets.Organization>(`organization/${id}`)
-		return gracely.Error.is(result) || permissions == undefined
-			? result
-			: this.filter(permissions, result) ?? gracely.client.unauthorized("forbidden")
+		return gracely.Error.is(result) || permissions == undefined ? result : filters.organization(permissions, result)
 	}
 	async list(permissions?: userwidgets.User.Permissions): Promise<userwidgets.Organization[] | gracely.Error> {
 		const result = await this.application().get<userwidgets.Organization[]>(`organization`)
 		return gracely.Error.is(result) || permissions == undefined
 			? result
-			: result.map(organization => this.filter(permissions, organization))
+			: result
+					.map(organization => filters.organization(permissions, organization))
+					.filter(
+						organization =>
+							organization.id in permissions ||
+							userwidgets.User.Permissions.check(permissions, organization.id, "org.view")
+					)
 	}
 	async update(
 		id: userwidgets.Organization.Identifier,
@@ -78,7 +81,7 @@ export class Organizations {
 			if (!userwidgets.Organization.is(response))
 				result = response
 			else {
-				const organization = permissions == undefined ? response : this.filter(permissions, response)
+				const organization = permissions == undefined ? response : filters.organization(permissions, response)
 				const removed = current.users.filter(user => !organization.users.includes(user))
 				const added = organization.users.filter(user => !current.users.includes(user))
 				const invites = (

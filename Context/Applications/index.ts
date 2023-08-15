@@ -1,6 +1,7 @@
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
+import { filters } from "../filters"
 import type { Context } from "../index"
 import { Inviter } from "../Inviter"
 import { Organizations } from "./Organizations"
@@ -20,19 +21,9 @@ export class Applications {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
-	private filter(
-		permissions: userwidgets.User.Permissions,
-		application: userwidgets.Application
-	): userwidgets.Application {
-		const result = application
-		if (!userwidgets.User.Permissions.check(permissions, "*", "app.read")) {
-			result.organizations = Object.fromEntries(Object.entries(result.organizations).filter(([id]) => permissions[id]))
-		}
-		return result
-	}
 	async fetch(permissions?: userwidgets.User.Permissions): Promise<userwidgets.Application | gracely.Error> {
 		const result = await this.application().get<userwidgets.Application>(`application`)
-		return gracely.Error.is(result) || permissions == undefined ? result : this.filter(permissions, result)
+		return gracely.Error.is(result) || permissions == undefined ? result : filters.application(permissions, result)
 	}
 	async create(
 		application: userwidgets.Application.Creatable,
@@ -42,7 +33,7 @@ export class Applications {
 			`application/${this.context.referer}`,
 			application
 		)
-		return gracely.Error.is(result) || permissions == undefined ? result : this.filter(permissions, result)
+		return gracely.Error.is(result) || permissions == undefined ? result : filters.application(permissions, result)
 	}
 	static open(context: Context): Applications | gracely.Error {
 		return !context.referer

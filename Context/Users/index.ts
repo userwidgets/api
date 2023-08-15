@@ -18,6 +18,27 @@ export class Users {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
+	private async syncUser(email: string, permissions: userwidgets.User.Permissions): Promise<void> {
+		const organizations = (
+			await Promise.all(
+				Object.keys((({ "*": _, ...permissions }) => permissions)(permissions)).map(
+					async id => await this.application().get<userwidgets.Organization>(`organization/${id}`)
+				)
+			)
+		).filter(userwidgets.Organization.is)
+		await Promise.all(
+			organizations.map(
+				async ({ id, users }) =>
+					await this.application().patch<userwidgets.Organization>(
+						`organization/${id}`,
+						{
+							users: [...users, email],
+						},
+						{ ifMatch: ["*"], contentType: "application/json;charset=UTF-8" }
+					)
+			)
+		)
+	}
 	async create(
 		user: userwidgets.User.Creatable,
 		permissions?: userwidgets.User.Permissions
@@ -30,26 +51,7 @@ export class Users {
 		if (gracely.Error.is(created))
 			result = created
 		else {
-			const organizations = (
-				await Promise.all(
-					Object.keys((({ "*": _, ...permissions }) => permissions)(created.permissions)).map(
-						async id => await this.application().get<userwidgets.Organization>(`organization/${id}`)
-					)
-				)
-			).filter(userwidgets.Organization.is)
-			const results = await Promise.all(
-				organizations.map(
-					async ({ id, users }) =>
-						await this.application().patch<userwidgets.Organization>(
-							`organization/${id}`,
-							{
-								users: [...users, created.email],
-							},
-							{ ifMatch: ["*"], contentType: "application/json;charset=UTF-8" }
-						)
-				)
-			)
-			console.log(results)
+			await this.syncUser(created.email, created.permissions)
 			result =
 				permissions == undefined
 					? created
@@ -76,10 +78,13 @@ export class Users {
 		})
 	}
 	async join(invite: userwidgets.User.Invite): Promise<userwidgets.User | gracely.Error> {
-		return await this.user(invite.email).patch(`user`, invite, {
+		const result = await this.user(invite.email).patch<userwidgets.User>(`user`, invite, {
 			application: this.context.referer,
 			contentType: "application/json;charset=UTF-8",
 		})
+		if (!gracely.Error.is(result))
+			await this.syncUser(result.email, result.permissions)
+		return result
 	}
 	async update(
 		email: userwidgets.Email,
@@ -87,14 +92,23 @@ export class Users {
 		entityTag: string,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
-		const result = await this.user(email).patch<userwidgets.User>(`user`, user, {
+		let result: Awaited<ReturnType<Users["update"]>>
+		const updated = await this.user(email).patch<userwidgets.User>(`user`, user, {
 			application: this.context.referer,
 			ifMatch: [entityTag],
 			contentType: "application/json;charset=UTF-8",
 		})
-		return gracely.Error.is(result) || permissions == undefined
-			? result
-			: filters.user(permissions, result) ?? gracely.client.unauthorized("forbidden")
+		if (gracely.Error.is(updated))
+			result = updated
+		else {
+			if (user.permissions)
+				await this.syncUser(updated.email, updated.permissions)
+			result =
+				permissions == undefined
+					? updated
+					: filters.user(permissions, updated) ?? gracely.client.unauthorized("forbidden")
+		}
+		return result
 	}
 	async list(permissions?: userwidgets.User.Permissions): Promise<userwidgets.User[] | gracely.Error> {
 		let result: Awaited<ReturnType<Users["list"]>>

@@ -18,7 +18,11 @@ export class Organizations {
 						...application,
 						organizations: {
 							...application.organizations,
-							[organization.id]: { ...organization, modified: isoly.DateTime.now() },
+							[organization.id]: {
+								...organization,
+								users: Array.from(new Set(organization.users)),
+								modified: isoly.DateTime.now(),
+							},
 						},
 					})
 			  ).organizations[organization.id]
@@ -43,7 +47,7 @@ export class Organizations {
 		else {
 			result = (await Promise.all(Object.keys(application.organizations).map(id => this.fetch(id)))).reduce<
 				userwidgets.Organization[]
-			>((result, response) => [...result, ...[response ?? []].flat()], [])
+			>((result, response) => result.concat(response ?? []), [])
 		}
 		return result
 	}
@@ -56,15 +60,15 @@ export class Organizations {
 		if (!application)
 			result = undefined
 		else {
-			result = application.organizations[id] = {
-				...application.organizations[id],
-				...(({ users, ...organization }) => organization)(organization),
-				...(organization.users && {
-					users: organization.users.map(user => (typeof user == "object" ? user.user : user)),
-				}),
-				modified: isoly.DateTime.now(),
-			}
-			await this.context.applications.change(application)
+			this.set(
+				Organization.from({
+					...application.organizations[id],
+					...(({ users, ...organization }) => organization)(organization),
+					...(organization.users && {
+						users: organization.users.map(user => (typeof user == "object" ? user.user : user)),
+					}),
+				})
+			)
 		}
 		return result
 	}

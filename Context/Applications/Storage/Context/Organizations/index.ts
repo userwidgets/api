@@ -6,7 +6,7 @@ import type { Context } from "../index"
 import { Organization } from "./Organization"
 
 export class Organizations {
-	async get(id: userwidgets.Organization.Identifier) {
+	async get(id: userwidgets.Organization.Identifier): Promise<Organization | undefined> {
 		return (await this.context.applications.get())?.organizations[id]
 	}
 	private async set(organization: Omit<Organization, "modified">): Promise<Organization | undefined> {
@@ -20,7 +20,6 @@ export class Organizations {
 							...application.organizations,
 							[organization.id]: {
 								...organization,
-								users: Array.from(new Set(organization.users)),
 								modified: isoly.DateTime.now(),
 							},
 						},
@@ -60,7 +59,7 @@ export class Organizations {
 		if (!application)
 			result = undefined
 		else {
-			this.set(
+			const updated = await this.set(
 				Organization.from({
 					...application.organizations[id],
 					...(({ users, ...organization }) => organization)(organization),
@@ -69,6 +68,7 @@ export class Organizations {
 					}),
 				})
 			)
+			result = !updated ? undefined : Organization.model(updated)
 		}
 		return result
 	}

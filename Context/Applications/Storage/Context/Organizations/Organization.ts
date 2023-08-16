@@ -38,7 +38,13 @@ export namespace Organization {
 		return "created" in organization
 			? {
 					...organization,
-					permissions: flagly.parse(organization.permissions.map(permission => `*.${permission}`).join(" ")),
+					permissions: flagly.parse(
+						Array.from(
+							new Set([...userwidgets.User.Permissions.Organization.flags, ...organization.permissions]),
+							permission => `*.${permission}`
+						).join(" ")
+					),
+					users: Array.from(new Set(organization.users)),
 			  }
 			: {
 					...organization,
@@ -46,10 +52,9 @@ export namespace Organization {
 					created: now,
 					permissions: flagly.parse(
 						Array.from(
-							new Set([...userwidgets.User.Permissions.Organization.flags, ...(organization.permissions ?? [])])
-						)
-							.map(permission => `*.${permission}`)
-							.join(" ")
+							new Set([...userwidgets.User.Permissions.Organization.flags, ...(organization.permissions ?? [])]),
+							permission => `*.${permission}`
+						).join(" ")
 					),
 					users: [],
 			  }

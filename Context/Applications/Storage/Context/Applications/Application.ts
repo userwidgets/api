@@ -40,7 +40,12 @@ export namespace Application {
 		return "created" in application
 			? {
 					...application,
-					permissions: flagly.parse(application.permissions.map(permission => `*.${permission}`).join(" ")),
+					permissions: flagly.parse(
+						Array.from(
+							new Set([...userwidgets.User.Permissions.flags, ...application.permissions]),
+							permission => `*.${permission}`
+						).join(" ")
+					),
 					organizations: Object.fromEntries(
 						Object.entries(application.organizations).map(([id, organization]) => [id, Organization.from(organization)])
 					),
@@ -48,9 +53,10 @@ export namespace Application {
 			: {
 					...application,
 					permissions: flagly.parse(
-						Array.from(new Set([...userwidgets.User.Permissions.flags, ...(application.permissions ?? [])]))
-							.map(permission => `*.${permission}`)
-							.join(" ")
+						Array.from(
+							new Set([...userwidgets.User.Permissions.flags, ...(application.permissions ?? [])]),
+							permission => `*.${permission}`
+						).join(" ")
 					),
 					modified: isoly.DateTime.now(),
 					created: isoly.DateTime.now(),

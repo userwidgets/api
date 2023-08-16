@@ -3,8 +3,9 @@ import { isoly } from "isoly"
 import { userwidgets } from "@userwidgets/model"
 import { http } from "cloudly-http"
 import { Context } from "../Context"
-import { router } from "../router"
+// import { router } from "../router"
 
+// deactivated
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: userwidgets.User | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
@@ -46,4 +47,4 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = await context.users.update(request.parameter.email, user, entityTag, credentials.permissions)
 	return result
 }
-router.add("PATCH", "/user/:email", update)
+// router.add("PATCH", "/user/:email", update)

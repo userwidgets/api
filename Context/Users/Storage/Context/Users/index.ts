@@ -60,7 +60,6 @@ export class Users {
 
 			if (permissions != undefined)
 				result.permissions[this.context.application] = {
-					...result.permissions[this.context.application],
 					...permissions,
 				}
 

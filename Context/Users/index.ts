@@ -18,7 +18,7 @@ export class Users {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
-	private async syncUser(email: string, permissions: userwidgets.User.Permissions): Promise<void> {
+	private async syncOrganizations(email: string, permissions: userwidgets.User.Permissions): Promise<void> {
 		const organizations = (
 			await Promise.all(
 				Object.keys((({ "*": _, ...permissions }) => permissions)(permissions)).map(
@@ -51,7 +51,7 @@ export class Users {
 		if (gracely.Error.is(created))
 			result = created
 		else {
-			await this.syncUser(created.email, created.permissions)
+			await this.syncOrganizations(created.email, created.permissions)
 			result =
 				permissions == undefined
 					? created
@@ -83,7 +83,7 @@ export class Users {
 			contentType: "application/json;charset=UTF-8",
 		})
 		if (!gracely.Error.is(result))
-			await this.syncUser(result.email, result.permissions)
+			await this.syncOrganizations(result.email, result.permissions)
 		return result
 	}
 	async update(
@@ -93,16 +93,33 @@ export class Users {
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
 		let result: Awaited<ReturnType<Users["update"]>>
-		const updated = await this.user(email).patch<userwidgets.User>(`user`, user, {
-			application: this.context.referer,
-			ifMatch: [entityTag],
-			contentType: "application/json;charset=UTF-8",
-		})
+		let updated: userwidgets.User | gracely.Error
+		if (user.permissions && permissions && !userwidgets.User.Permissions.check(permissions, "*", "user.edit")) {
+			const current = await this.fetch(email, permissions)
+			if (gracely.Error.is(current))
+				updated = current
+			else
+				updated = await this.update(
+					email,
+					{
+						...user,
+						permissions: { ...(current.permissions["*"] && { "*": current.permissions }), ...user.permissions },
+					},
+					entityTag,
+					undefined
+				)
+		} else
+			updated = await this.user(email).patch<userwidgets.User>(`user`, user, {
+				application: this.context.referer,
+				ifMatch: [entityTag],
+				contentType: "application/json;charset=UTF-8",
+			})
+
 		if (gracely.Error.is(updated))
 			result = updated
 		else {
 			if (user.permissions)
-				await this.syncUser(updated.email, updated.permissions)
+				await this.syncOrganizations(updated.email, updated.permissions)
 			result =
 				permissions == undefined
 					? updated
@@ -124,11 +141,7 @@ export class Users {
 								.map(organization => organization.users)
 								.flat()
 						),
-						async email =>
-							await this.user(email).get<userwidgets.User>(`user`, {
-								application: this.context.referer,
-								contentType: "application/json;charset=UTF-8",
-							})
+						async email => await this.fetch(email, undefined)
 					)
 				)
 			).filter(userwidgets.User.is)

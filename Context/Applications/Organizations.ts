@@ -21,6 +21,32 @@ export class Organizations {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
+	private async removeUsers(id: userwidgets.Organization.Identifier, emails: userwidgets.Email[]): Promise<void> {
+		const users = (
+			await Promise.all(
+				emails.map(
+					async email => await this.user(email).get<userwidgets.User>(`user`, { application: this.context.referer })
+				)
+			)
+		).filter(userwidgets.User.is)
+		await Promise.all(
+			users.map(
+				async user =>
+					await this.user(user.email).patch<userwidgets.User>(
+						`user`,
+						{
+							...user,
+							permissions: (({ [id]: _, ...permissions }) => permissions)(user.permissions),
+						},
+						{
+							ifMatch: ["*"],
+							application: this.context.referer,
+							contentType: "application/json;charset=UTF-8",
+						}
+					)
+			)
+		)
+	}
 	async create(
 		organization: userwidgets.Organization.Creatable,
 		permissions?: userwidgets.User.Permissions
@@ -66,10 +92,14 @@ export class Organizations {
 		if (!userwidgets.Organization.is(current))
 			result = current
 		else {
-			let updated = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
-				ifMatch: [entityTag],
-				contentType: "application/json",
-			})
+			// let updated = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
+			// 	ifMatch: [entityTag],
+			// 	contentType: "application/json",
+			// })
+			let updated: userwidgets.Organization | gracely.Error = {
+				...current,
+				users: organization.users ?? [],
+			} as userwidgets.Organization
 			if (!userwidgets.Organization.is(updated))
 				result = updated
 			else {
@@ -86,13 +116,14 @@ export class Organizations {
 					}
 					const removed = current.users.filter(user => !users.updated.includes(user))
 					const added = updated.users.filter(user => !users.current.includes(user))
-					const invited = [...added, ...(organization.users ?? [])].reduce(
+					const invited = [...added, ...(organization.users?.filter(user => typeof user == "object") ?? [])].reduce(
 						(result, invited) =>
 							typeof invited == "string"
 								? result.set(invited, ["user.view"])
-								: result.set(invited.user, invited.permissions),
+								: result.set(invited.user, invited.permissions ?? ["user.view"]),
 						new Map<userwidgets.Email, string[]>()
 					)
+					await this.removeUsers(id, removed)
 					const invites = (
 						await Promise.all(
 							Array.from(invited.entries()).map(async ([user, permissions]) => {
@@ -106,7 +137,6 @@ export class Organizations {
 							})
 						)
 					).filter((invite): invite is Exclude<typeof invite, undefined> => !!invite)
-					await Promise.all(removed.map(async user => this.user(user).delete(`user`)))
 					result = { organization: updated, invites: invites, removals: removed.map(user => ({ email: user })) }
 				}
 			}

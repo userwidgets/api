@@ -2,6 +2,7 @@ import { gracely } from "gracely"
 import { isoly } from "isoly"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../../../../common"
+import { Environment } from "../../../../Environment"
 import type { Context } from "../index"
 import { Password } from "./Password"
 import { User } from "./User"
@@ -92,14 +93,14 @@ export class Users {
 		}
 		return result
 	}
-	static create(state: DurableObjectState, context: Context): Users | gracely.Error {
+	static create(state: DurableObjectState, context: Context, environment: Environment): Users | gracely.Error {
 		return !context.application
 			? gracely.client.missingHeader("Application", "Application is required for this endpoint.")
-			: !context.environment.hashSecret
+			: !environment.hashSecret
 			? gracely.server.misconfigured("hashSecret", "hasSecret is not set in worker environment.")
 			: new this(
 					{ object: new common.DurableObject<User>(state.storage) },
-					{ application: context.application, secret: context.environment.hashSecret }
+					{ application: context.application, secret: environment.hashSecret }
 			  )
 	}
 }

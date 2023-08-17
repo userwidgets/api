@@ -17,12 +17,12 @@ export class Context {
 	}
 	#users?: Users | gracely.Error
 	get users() {
-		return (this.#users ??= Users.create(this.state, this))
+		return (this.#users ??= Users.create(this.state, this, this.environment))
 	}
 	// public for compatibility with other DO endpoints
 	private constructor(
-		public state: DurableObjectState,
-		public environment: Environment,
+		private state: DurableObjectState,
+		private environment: Environment,
 		public request: http.Request
 	) {}
 	static create(state: DurableObjectState, environment: Environment, request: http.Request) {

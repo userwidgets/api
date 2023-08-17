@@ -8,7 +8,6 @@ export async function create(
 	request: http.Request,
 	context: Context
 ): Promise<userwidgets.Organization | gracely.Error> {
-	// make sure permissions on the users exits in the organization / application
 	let result: userwidgets.Organization | gracely.Error
 	const id = await context.organizations.id()
 	const body: unknown = await request.body

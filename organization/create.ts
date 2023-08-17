@@ -71,10 +71,10 @@ async function postProcess(
 			const signable: userwidgets.User.Invite.Creatable = {
 				email: email,
 				active: !gracely.Error.is(context.users) && gracely.Error.is(await context.users.fetch(email)) ? false : true,
-				permissions: {
-					...(permissions?.["*"] && { "*": permissions?.["*"] }),
-					...(permissions?.organization && { [id]: permissions.organization }),
-				},
+				permissions: userwidgets.User.Permissions.merge(
+					(permissions?.["*"] && userwidgets.User.Permissions.set({}, "*", permissions["*"])) ?? {},
+					(permissions?.organization && userwidgets.User.Permissions.set({}, id, permissions.organization)) ?? {}
+				),
 			}
 			const invite = await context.inviter.create(signable)
 			if (!invite)

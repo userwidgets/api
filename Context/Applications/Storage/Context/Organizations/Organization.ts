@@ -50,6 +50,7 @@ export namespace Organization {
 					...organization,
 					modified: now,
 					created: now,
+					// permissions: Array.from(new Set([...userwidgets.User.Permissions.Organization.flags, ...(organization.permissions) ?? []]), permission => )
 					permissions: flagly.parse(
 						Array.from(
 							new Set([...userwidgets.User.Permissions.Organization.flags, ...(organization.permissions ?? [])]),

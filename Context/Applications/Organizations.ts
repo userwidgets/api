@@ -18,17 +18,18 @@ export class Organizations {
 	private user(email: string): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.userNamespace, email)
 	}
+	private async fetchUser(email: userwidgets.Email): Promise<userwidgets.User | gracely.Error> {
+		return await this.user(email).get<userwidgets.User>(`user`, {
+			application: this.context.referer,
+		})
+	}
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
 	private async removeUsers(id: userwidgets.Organization.Identifier, emails: userwidgets.Email[]): Promise<void> {
-		const users = (
-			await Promise.all(
-				emails.map(
-					async email => await this.user(email).get<userwidgets.User>(`user`, { application: this.context.referer })
-				)
-			)
-		).filter(userwidgets.User.is)
+		const users = (await Promise.all(emails.map(async email => await this.fetchUser(email)))).filter(
+			userwidgets.User.is
+		)
 		await Promise.all(
 			users.map(
 				async user =>
@@ -88,18 +89,14 @@ export class Organizations {
 		| gracely.Error
 	> {
 		let result: Awaited<ReturnType<Organizations["update"]>>
-		const current = await this.application().get<userwidgets.Organization>(`organization/${id}`)
+		const current = await this.fetch(id, undefined)
 		if (!userwidgets.Organization.is(current))
 			result = current
 		else {
-			// let updated = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
-			// 	ifMatch: [entityTag],
-			// 	contentType: "application/json",
-			// })
-			let updated: userwidgets.Organization | gracely.Error = {
-				...current,
-				users: organization.users ?? [],
-			} as userwidgets.Organization
+			let updated = await this.application().patch<userwidgets.Organization>(`organization/${id}`, organization, {
+				ifMatch: [entityTag],
+				contentType: "application/json",
+			})
 			if (!userwidgets.Organization.is(updated))
 				result = updated
 			else {
@@ -129,9 +126,8 @@ export class Organizations {
 							Array.from(invited.entries()).map(async ([user, permissions]) => {
 								const invite = await this.context.inviter.create({
 									email: user,
-									active: !gracely.Error.is(await this.user(user).get<userwidgets.User>("user")),
-									permissions:
-										userwidgets.User.Permissions.set(userwidgets.User.Permissions.type, {}, id, ...permissions) ?? {},
+									active: !gracely.Error.is(await this.fetchUser(user)),
+									permissions: userwidgets.User.Permissions.set({}, id, permissions) ?? {},
 								})
 								return !invite ? undefined : { email: user, invite: invite }
 							})

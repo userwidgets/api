@@ -80,7 +80,6 @@ export class Users {
 			result = undefined
 		else {
 			const permissions = userwidgets.User.Permissions.merge(
-				userwidgets.User.Permissions.type,
 				current.permissions[this.context.application] ?? {},
 				invite.permissions
 			)

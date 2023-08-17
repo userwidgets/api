@@ -42,7 +42,7 @@ async function user(
 	else {
 		const current = await context.users.fetch()
 		if (!current)
-			result = gracely.client.notFound()
+			result = gracely.client.notFound("This user does not exist.")
 		else if (entityTag != "*" && entityTag < current.modified)
 			result = gracely.client.entityTagMismatch("Requested user have already changed.")
 		else

@@ -11,7 +11,7 @@
   "homepage": "https://github.com/userwidgets/api",
   "main": "./dist/_worker.mjs",
   "module": "./dist/_worker.mjs",
-  "jest": {
+	"jest": {
     "transform": {
       "^.+\\.(j|t)sx?$": [
         "ts-jest",
@@ -21,7 +21,7 @@
       ]
     },
     "transformIgnorePatterns": [
-      "<rootDir>/node_modules/(?!(cryptly|authly|isoly|gracely|cloudly-http|cloudly-router|cloudly-formdata)/.*)"
+      "<rootDir>/node_modules/(?!(authly|flagly|isly|isoly|cryptly|gracely|cloudly-http|cloudly-rest|cloudly-router|cloudly-formdata|@userwidgets|@issuefab/model)/.*)"
     ],
     "testEnvironment": "node",
     "testRegex": "((\\.|/)(test|spec))(\\.|\\/.+)(jsx?|tsx?)$",
@@ -39,7 +39,7 @@
     "lint": "eslint '**/*.{ts,tsx}'",
     "fix": "eslint '**/*.{ts,tsx}' --fix",
     "clean": "rimraf dist node_modules coverage",
-    "test": "npm run build && node --experimental-vm-modules node_modules/.bin/jest --maxWorkers=2",
+    "test": "jest",
     "login": "wrangler login",
     "transpile": "tsc --project tsconfig.test.json",
     "test:watch": "watch jest",

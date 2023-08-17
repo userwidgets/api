@@ -31,7 +31,9 @@ export async function update(
 		else if (entityTag != "*" && entityTag < current.modified)
 			result = result = gracely.client.entityTagMismatch("Requested organization is already changed.")
 		else
-			result = (await context.organizations.update(request.parameter.id, organization)) ?? gracely.client.notFound()
+			result =
+				(await context.organizations.update(request.parameter.id, organization)) ??
+				gracely.client.invalidContent("Organization", "unable to update organization")
 	}
 
 	return result

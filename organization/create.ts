@@ -60,7 +60,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 }
 
 async function postProcess(
-	id: string,
+	id: userwidgets.Organization.Identifier,
 	organization: userwidgets.Organization.Creatable,
 	context: { inviter: Inviter; users: Users; environment: Environment; email: Context["email"] },
 	url: URL | undefined

@@ -19,7 +19,6 @@ export class Context {
 	get users() {
 		return (this.#users ??= Users.create(this.state, this, this.environment))
 	}
-	// public for compatibility with other DO endpoints
 	private constructor(
 		private state: DurableObjectState,
 		private environment: Environment,

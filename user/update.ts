@@ -3,9 +3,8 @@ import { isoly } from "isoly"
 import { userwidgets } from "@userwidgets/model"
 import { http } from "cloudly-http"
 import { Context } from "../Context"
-// import { router } from "../router"
+import { router } from "../router"
 
-// deactivated
 export async function update(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: userwidgets.User | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
@@ -31,20 +30,22 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (
 		user.password &&
 		credentials.email == request.parameter.email &&
-		isoly.TimeSpan.toMinutes(isoly.DateTime.span(isoly.DateTime.now(), credentials.issued)) < 5
+		isoly.TimeSpan.toMinutes(isoly.DateTime.span(isoly.DateTime.now(), credentials.issued)) > 5
 	)
 		result = gracely.client.unauthorized("refresh")
 	else if (user.name && request.parameter.email != credentials.email)
 		result = gracely.client.unauthorized("forbidden")
 	else if (
-		user.permissions &&
-		Object.keys(user.permissions).some(
-			id => !userwidgets.User.Permissions.check(credentials.permissions, id, "user.admin")
-		)
+		user.permissions
+		// &&
+		// Object.keys(user.permissions).some(
+		// 	id => !userwidgets.User.Permissions.check(credentials.permissions, id, "user.admin")
+		// )
 	)
-		result = gracely.client.unauthorized("forbidden")
+		// result = gracely.client.unauthorized("forbidden")
+		result = gracely.server.backendFailure("not implemented")
 	else
 		result = await context.users.update(request.parameter.email, user, entityTag, credentials.permissions)
 	return result
 }
-// router.add("PATCH", "/user/:email", update)
+router.add("PATCH", "/user/:email", update)

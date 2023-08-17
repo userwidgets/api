@@ -21,7 +21,7 @@ export async function create(
 	else
 		result =
 			(await context.organizations.create({ ...organization, id })) ??
-			gracely.server.backendFailure("Change this error")
+			gracely.client.invalidContent("Organization", "Creating organization failed")
 	return result
 }
 

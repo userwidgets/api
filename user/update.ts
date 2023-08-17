@@ -29,8 +29,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (
 		user.password &&
-		credentials.email == request.parameter.email &&
-		isoly.TimeSpan.toMinutes(isoly.DateTime.span(isoly.DateTime.now(), credentials.issued)) > 5
+		(credentials.email != request.parameter.email ||
+			isoly.TimeSpan.toMinutes(isoly.DateTime.span(isoly.DateTime.now(), credentials.issued)) > 5)
 	)
 		result = gracely.client.unauthorized("refresh")
 	else if (user.name && request.parameter.email != credentials.email)

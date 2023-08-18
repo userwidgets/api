@@ -28,12 +28,12 @@ export async function update(
 		const current = await context.organizations.fetch(request.parameter.id)
 		if (!current)
 			result = gracely.client.notFound()
-		else if (entityTag != "*" && entityTag < current.value.modified)
+		else if (entityTag != "*" && entityTag < current.modified)
 			result = result = gracely.client.entityTagMismatch("Requested organization is already changed.")
 		else
 			result =
-				(await context.organizations.update(request.parameter.id, organization, { current }))?.value ??
-				gracely.client.notFound()
+				(await context.organizations.update(request.parameter.id, organization)) ??
+				gracely.client.invalidContent("Organization", "unable to update organization")
 	}
 
 	return result

@@ -1,18 +1,21 @@
-import * as gracely from "gracely"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { userwidgets } from "@userwidgets/model"
+import { http } from "cloudly-http"
 import { common } from "../common"
 import { Context } from "../Context"
+import { Environment } from "../Context/Environment"
 import { Inviter } from "../Context/Inviter"
+import { Users } from "../Context/Users"
 import { router } from "../router"
 
 type Response =
 	| { organization: gracely.Error }
-	| { organization: model.Organization; feedback: model.User.Feedback[] | gracely.Error }
+	| { organization: userwidgets.Organization; feedback: userwidgets.User.Feedback[] | gracely.Error }
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
 	let result: gracely.Error | Response
-	const organization: model.Organization.Creatable | any = await request.body
+	const body: unknown = await request.body
+	const organization = userwidgets.Organization.Creatable.type.get(body)
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token", "admin")
@@ -22,55 +25,63 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = context.applications
 	else if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!model.Organization.Creatable.is(organization))
-		result = gracely.client.invalidContent("model.Organization", "Request body invalid")
+	else if (!organization)
+		result = gracely.client.flawedContent(userwidgets.Organization.Creatable.flaw(body))
 	else if (gracely.Error.is(credentials))
 		result = credentials
-	else if (!credentials || (credentials != "admin" && !credentials.permissions["*"]?.application?.write))
+	else if (
+		!credentials ||
+		(credentials != "admin" && userwidgets.User.Permissions.check(credentials.permissions, "*", "org.create"))
+	)
 		result = gracely.client.unauthorized(
-			`Not authorized for this action on userwidgets organization. Missing permissions. Received '${request.header.authorization}'`
+			`Not authorized for this action on userwidgets organization. Missing permissions.'`
 		)
 	else if (gracely.Error.is(context.inviter))
 		result = context.inviter
 	else {
-		const created = await context.applications.organizations.create(organization)
+		const created = await context.applications.organizations.create(
+			organization,
+			credentials == "admin" ? undefined : credentials.permissions
+		)
 
 		result = gracely.Error.is(created)
 			? { organization: created }
 			: {
 					organization: created,
-					feedback: await postProcess(created.id, organization, context, url, context.inviter),
+					feedback: await postProcess(
+						created.id,
+						organization,
+						{ inviter: context.inviter, users: context.users, environment: context.environment, email: context.email },
+						url
+					),
 			  }
 	}
 	return result
 }
 
 async function postProcess(
-	organizationId: string,
-	organization: model.Organization.Creatable,
-	context: Context,
-	url: URL | undefined,
-	inviter: Inviter
-): Promise<model.User.Feedback[]> {
+	id: userwidgets.Organization.Identifier,
+	organization: userwidgets.Organization.Creatable,
+	context: { inviter: Inviter; users: Users; environment: Environment; email: Context["email"] },
+	url: URL | undefined
+): Promise<userwidgets.User.Feedback[]> {
 	return await Promise.all(
 		organization.users.map(async ({ email, permissions }) => {
-			let result: model.User.Feedback | gracely.Error
-			const signable: model.User.Invite.Creatable = {
+			let result: userwidgets.User.Feedback | gracely.Error
+			const signable: userwidgets.User.Invite.Creatable = {
 				email: email,
 				active: !gracely.Error.is(context.users) && gracely.Error.is(await context.users.fetch(email)) ? false : true,
-				permissions: {
-					...(permissions?.[0] && { "*": permissions[0] }),
-					[organizationId]: permissions?.[1]
-						? permissions[1]
-						: Object.fromEntries(organization.permissions.map(permission => [permission, { read: true, write: true }])),
-				},
+				permissions: userwidgets.User.Permissions.merge(
+					(permissions?.["*"] && userwidgets.User.Permissions.set({}, "*", permissions["*"])) ?? {},
+					(permissions?.organization && userwidgets.User.Permissions.set({}, id, permissions.organization)) ?? {}
+				),
 			}
-			const invite = await inviter.create(signable)
+			const invite = await context.inviter.create(signable)
 			if (!invite)
 				result = gracely.server.backendFailure("failed to sign.")
 			else {
 				url?.searchParams.set(
-					model.Configuration.addDefault(
+					userwidgets.Configuration.addDefault(
 						{ inviteParameterName: context.environment.inviteParameterName },
 						"inviteParameterName"
 					).inviteParameterName,

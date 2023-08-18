@@ -1,70 +1,65 @@
-import * as gracely from "gracely"
-import * as isoly from "isoly"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { isoly } from "isoly"
+import { userwidgets } from "@userwidgets/model"
+import { http } from "cloudly-http"
+import { isly } from "isly"
 import { Context } from "../Context"
 import { router } from "../router"
 
-export async function update(request: http.Request, context: Context) {
-	let result: model.User | gracely.Error
-	const invite: model.User.Invite | any = await request.body
-	const current = await context.state.storage.get<model.User>("data")
-	if (!model.User.Invite.is(invite))
-		result = gracely.client.malformedContent(
-			"User.Invite",
-			"User.Invite",
-			"A valid User.Invite object is required to update a new user."
-		)
-	else if (!current)
-		result = gracely.client.invalidContent("user", "A user with that email does not exists.")
+type Body = userwidgets.User.Invite | userwidgets.User.Changeable
+namespace Body {
+	export const type = isly.union<Body, userwidgets.User.Invite, userwidgets.User.Changeable>(
+		userwidgets.User.Invite.type,
+		userwidgets.User.Changeable.type
+	)
+}
+export async function update(request: http.Request, context: Context): Promise<userwidgets.User | gracely.Error> {
+	let result: Awaited<ReturnType<typeof update>>
+	const raw = await request.body
+	const body = Body.type.get(raw)
+	if (!body)
+		result = gracely.client.flawedContent(Body.type.flaw(raw))
+	else if ("token" in body)
+		result = await join(context, body)
+	else
+		result = await user(request, context, body)
+
+	return result
+}
+async function user(
+	request: http.Request,
+	context: Context,
+	user: userwidgets.User.Changeable
+): Promise<userwidgets.User | gracely.Error> {
+	let result: Awaited<ReturnType<typeof update>>
+	const entityTag = request.header.ifMatch?.at(0)
+	if (!entityTag)
+		result = gracely.client.missingHeader("If-Match", "If-Match header is required.")
+	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
+		result = gracely.client.malformedHeader("If-Match", "Expected If-Match to be a date or *.")
+	else if (gracely.Error.is(context.users))
+		result = context.users
 	else {
-		const permissions = current.permissions[invite.audience]
-		const missing = Object.fromEntries(
-			Object.entries(invite.permissions).filter(([key, _]) => permissions && !(key in permissions))
-		)
-		Object.keys(missing).length
-			? await context.state.storage.put<model.User>(
-					"data",
-					(result = {
-						...current,
-						permissions: {
-							...current.permissions,
-							[invite.audience]: {
-								...current.permissions[invite.audience],
-								"*": {
-									application: {
-										read:
-											permissions?.["*"]?.application?.read || invite.permissions["*"]?.application?.read
-												? true
-												: false,
-										write:
-											permissions?.["*"]?.application?.write || invite.permissions["*"]?.application?.write
-												? true
-												: false,
-									},
-									organization: {
-										read:
-											permissions?.["*"]?.organization?.read || invite.permissions["*"]?.organization?.read
-												? true
-												: false,
-										write:
-											permissions?.["*"]?.organization?.write || invite.permissions["*"]?.organization?.write
-												? true
-												: false,
-									},
-									user: {
-										read: permissions?.["*"]?.user?.read || invite.permissions["*"]?.user?.read ? true : false,
-										write: permissions?.["*"]?.user?.write || invite.permissions["*"]?.user?.write ? true : false,
-									},
-								},
-								...missing,
-							},
-						},
-						modified: isoly.DateTime.now(),
-					})
-			  )
-			: (result = { status: 410, type: "gone", error: "You have already joined this organization." })
+		const current = await context.users.fetch()
+		if (!current)
+			result = gracely.client.notFound("This user does not exist.")
+		else if (entityTag != "*" && entityTag < current.modified)
+			result = gracely.client.entityTagMismatch("Requested user have already changed.")
+		else
+			result =
+				(await context.users.update(user)) ?? gracely.client.invalidContent("User.Changeable", "Unable to store user.")
 	}
 	return result
 }
+async function join(context: Context, invite: userwidgets.User.Invite): Promise<userwidgets.User | gracely.Error> {
+	let result: Awaited<ReturnType<typeof update>>
+	if (gracely.Error.is(context.users))
+		result = context.users
+	else {
+		const user = await context.users.join(invite)
+		result = !user ? gracely.client.invalidContent("User.Invite", "Unable to join this organization.") : user
+	}
+	return result
+}
+
 router.add("PATCH", "/user", update)

@@ -1,6 +1,6 @@
-import * as gracely from "gracely"
-import * as authly from "authly"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { authly } from "authly"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
@@ -26,7 +26,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (gracely.Error.is(context.users))
 		result = context.users
 	else {
-		const response = await context.users.update(invite)
+		const response = await context.users.join(invite)
 		result = gracely.Error.is(response)
 			? response
 			: (await context.authenticator.sign(response)) ??

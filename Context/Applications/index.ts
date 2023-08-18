@@ -1,6 +1,7 @@
-import * as gracely from "gracely"
-import * as model from "@userwidgets/model"
+import { gracely } from "gracely"
+import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
+import { filters } from "../filters"
 import type { Context } from "../index"
 import { Inviter } from "../Inviter"
 import { Organizations } from "./Organizations"
@@ -15,20 +16,28 @@ export class Applications {
 		},
 		inviter: Inviter
 	) {
-		this.organizations = new Organizations({ ...context, inviter })
+		this.organizations = new Organizations({ ...context, inviter, applications: this })
 	}
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
-	async fetch(): Promise<model.Application | gracely.Error> {
-		return await this.application().get<model.Application>(`application`)
+	async fetch(permissions?: userwidgets.User.Permissions): Promise<userwidgets.Application | gracely.Error> {
+		const result = await this.application().get<userwidgets.Application>(`application`)
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
-	async create(application: model.Application.Creatable): Promise<model.Application | gracely.Error> {
-		const response = await this.application().post<model.Application>(
+	async create(
+		application: userwidgets.Application.Creatable,
+		permissions?: userwidgets.User.Permissions
+	): Promise<userwidgets.Application | gracely.Error> {
+		const result = await this.application().post<userwidgets.Application>(
 			`application/${this.context.referer}`,
 			application
 		)
-		return response
+		return gracely.Error.is(result) || permissions == undefined
+			? result
+			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	static open(context: Context): Applications | gracely.Error {
 		return !context.referer

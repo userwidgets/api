@@ -11,9 +11,8 @@ export class Context {
 	get organizations() {
 		return (this.#organizations ??= Organizations.create(this.state, this))
 	}
-	// public for compatibility with other DO endpoints
-	private constructor(public state: DurableObjectState, public environment: Environment) {}
-	static create(state: DurableObjectState, environment: Environment) {
-		return new this(state, environment)
+	private constructor(private state: DurableObjectState) {}
+	static create(state: DurableObjectState, _: Environment) {
+		return new this(state)
 	}
 }

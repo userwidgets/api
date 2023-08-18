@@ -21,7 +21,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")
 	const url: URL | undefined = common.url.parse(request.search.url)
-	const body = await request.body
+	const body: unknown = await request.body
 	const organization = userwidgets.Organization.Changeable.type.get(body)
 	const entityTag = request.header.ifMatch?.at(0)
 
@@ -46,21 +46,27 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (
 		organization.users &&
-		!credentials.permissions["*"]?.user?.write &&
-		!credentials.permissions[request.parameter.id]?.user?.write
+		(!userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit", "user.invite") ||
+			!(
+				organization.users.every(invited => typeof invited == "string") ||
+				userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "user.admin")
+			))
 	)
 		result = gracely.client.unauthorized("forbidden")
 	else if (
 		(organization.permissions || organization.name) &&
-		!credentials.permissions["*"]?.organization?.write &&
-		!credentials.permissions[request.parameter.id]?.organization?.write
+		!userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit")
 	)
 		result = gracely.client.unauthorized("forbidden")
 	else {
-		const response = await context.applications.organizations.update(request.parameter.id, organization, entityTag)
-		result = response
-		if (url && !gracely.Error.is(response)) {
-			response.invites.map(async invite => {
+		result = await context.applications.organizations.update(
+			request.parameter.id,
+			organization,
+			entityTag,
+			credentials.permissions
+		)
+		if (url && !gracely.Error.is(result)) {
+			result.invites.map(async invite => {
 				const result = { ...invite }
 				if (!gracely.Error.is(invite)) {
 					const inviteUrl = new URL(url.href)

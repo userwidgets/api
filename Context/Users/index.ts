@@ -1,8 +1,9 @@
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
-import { Environment } from "../Environment"
+import { Applications } from "../Applications"
 import { filters } from "../filters"
+import type { Context } from "../index"
 
 export class Users {
 	private constructor(
@@ -10,6 +11,7 @@ export class Users {
 			userNamespace: DurableObjectNamespace
 			applicationNamespace: DurableObjectNamespace
 			referer: string
+			applications: Applications
 		}
 	) {}
 	private user(email: string): common.DurableObject.Client {
@@ -43,11 +45,16 @@ export class Users {
 		user: userwidgets.User.Creatable,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
+		const permitted = await this.permittedInvites(user.email, user.permissions)
 		let result: userwidgets.User | gracely.Error
-		const created = await this.user(user.email).post<userwidgets.User>(`user`, user, {
-			application: this.context.referer,
-			contentType: "application/json;charset=UTF-8",
-		})
+		const created = await this.user(user.email).post<userwidgets.User>(
+			`user`,
+			{ ...user, permissions: permitted },
+			{
+				application: this.context.referer,
+				contentType: "application/json;charset=UTF-8",
+			}
+		)
 		if (gracely.Error.is(created))
 			result = created
 		else {
@@ -77,11 +84,35 @@ export class Users {
 			contentType: "application/json;charset=UTF-8",
 		})
 	}
+	private async permittedInvites(
+		email: userwidgets.Email,
+		permissions: userwidgets.User.Permissions
+	): Promise<userwidgets.User.Permissions> {
+		const invitedOrganizationIds = Object.keys((({ "*": _, ...permissions }) => permissions)(permissions))
+		const organizations = (
+			await Promise.all(invitedOrganizationIds.map(id => this.context.applications.organizations.fetch(id)))
+		).filter(userwidgets.Organization.is)
+		return {
+			...(permissions["*"] && { "*": permissions["*"] }),
+			...Object.fromEntries(
+				Object.entries(permissions).filter(([id, _]) =>
+					organizations
+						.filter(organization => organization.users.includes(email))
+						.some(organization => organization.id == id)
+				)
+			),
+		}
+	}
 	async join(invite: userwidgets.User.Invite): Promise<userwidgets.User | gracely.Error> {
-		const result = await this.user(invite.email).patch<userwidgets.User>(`user`, invite, {
-			application: this.context.referer,
-			contentType: "application/json;charset=UTF-8",
-		})
+		const permitted = await this.permittedInvites(invite.email, invite.permissions)
+		const result = await this.user(invite.email).patch<userwidgets.User>(
+			`user`,
+			{ ...invite, permissions: permitted },
+			{
+				application: this.context.referer,
+				contentType: "application/json;charset=UTF-8",
+			}
+		)
 		if (!gracely.Error.is(result))
 			await this.syncOrganizations(result.email, result.permissions)
 		return result
@@ -160,17 +191,20 @@ export class Users {
 		}
 		return result
 	}
-	static open(environment: Environment, referer: string | undefined): Users | gracely.Error {
-		return !referer
+	static open(context: Context): Users | gracely.Error {
+		return !context.referer
 			? gracely.client.missingHeader("Referer", "Referer required.")
-			: !environment.userNamespace
+			: !context.environment.userNamespace
 			? gracely.server.misconfigured("userNamespace", "Storage namespace missing.")
-			: !environment.applicationNamespace
+			: !context.environment.applicationNamespace
 			? gracely.server.misconfigured("applicationNamespace", "Storage namespace missing.")
+			: gracely.Error.is(context.applications)
+			? context.applications
 			: new this({
-					userNamespace: environment.userNamespace,
-					applicationNamespace: environment.applicationNamespace,
-					referer,
+					userNamespace: context.environment.userNamespace,
+					applicationNamespace: context.environment.applicationNamespace,
+					referer: context.referer,
+					applications: context.applications,
 			  })
 	}
 }

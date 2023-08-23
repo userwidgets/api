@@ -19,7 +19,7 @@ export class Context {
 	}
 	#users?: Users | gracely.Error
 	get users(): Users | gracely.Error {
-		return (this.#users ??= Users.open(this.environment, this.referer))
+		return (this.#users ??= Users.open(this))
 	}
 	#authenticator?: Authenticator | gracely.Error
 	get authenticator(): Authenticator | gracely.Error {

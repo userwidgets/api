@@ -41,11 +41,11 @@ export class Users {
 			)
 		)
 	}
-	async create( //here we create a new user
+	async create(
 		user: userwidgets.User.Creatable,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
-		const permitted = await this.permittedInvites(user.email, user.permissions) //this doesnt work
+		const permitted = await this.permittedInvites(user.email, user.permissions)
 		let result: userwidgets.User | gracely.Error
 		const created = await this.user(user.email).post<userwidgets.User>(
 			`user`,
@@ -107,7 +107,7 @@ export class Users {
 		const permitted = await this.permittedInvites(invite.email, invite.permissions)
 		const result = await this.user(invite.email).patch<userwidgets.User>(
 			`user`,
-			{ ...invite, permissions: permitted }, //does this syntax work? no
+			{ ...invite, permissions: permitted },
 			{
 				application: this.context.referer,
 				contentType: "application/json;charset=UTF-8",

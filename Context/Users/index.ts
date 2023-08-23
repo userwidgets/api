@@ -49,7 +49,7 @@ export class Users {
 		let result: userwidgets.User | gracely.Error
 		const created = await this.user(user.email).post<userwidgets.User>(
 			`user`,
-			{ ...user, permission: permitted },
+			{ ...user, permissions: permitted },
 			{
 				application: this.context.referer,
 				contentType: "application/json;charset=UTF-8",

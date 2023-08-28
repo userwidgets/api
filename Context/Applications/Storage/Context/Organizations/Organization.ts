@@ -56,7 +56,7 @@ export namespace Organization {
 							permission => `*.${permission}`
 						).join(" ")
 					),
-					users: [],
+					users: Array.from(new Set(organization.users.map(user => (typeof user == "object" ? user.email : user)))),
 			  }
 	}
 }

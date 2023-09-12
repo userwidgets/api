@@ -23,21 +23,18 @@ export class Users {
 		let result: userwidgets.User | undefined
 		if (await this.get())
 			result = undefined
-		else
-			result = User.model(
-				await this.set({
-					...user,
-					password: await Password.hash(user.password.new, this.context.secret),
-					permissions: { [this.context.application]: user.permissions },
-					created: isoly.DateTime.now(),
-				}),
-				this.context.application
-			)
+		else {
+			const created = await User.from(this.context, user)
+			if (!created)
+				result = undefined
+			else
+				result = User.model(this.context, await this.set(created))
+		}
 		return result
 	}
 	async fetch(): Promise<userwidgets.User | undefined> {
 		const result = await this.get()
-		return result == undefined ? undefined : User.model(result, this.context.application)
+		return result == undefined ? undefined : User.model(this.context, result)
 	}
 	async authenticate(credentials: userwidgets.User.Credentials): Promise<userwidgets.User.Key.Creatable | undefined> {
 		let result: Awaited<ReturnType<Users["authenticate"]>>
@@ -47,32 +44,17 @@ export class Users {
 		else if (!(await Password.verify(credentials.password, current.password, this.context.secret)))
 			result = undefined
 		else
-			result = userwidgets.User.Key.Creatable.from(User.model(current, this.context.application))
+			result = userwidgets.User.Key.Creatable.from(User.model(this.context, current))
 		return result
 	}
 	async update(user: userwidgets.User.Changeable): Promise<userwidgets.User | undefined> {
-		const { name, permissions, password } = user
 		let result = await this.get()
 		if (!result)
 			result = undefined
 		else {
-			if (name != undefined)
-				result.name = name
-
-			if (permissions != undefined)
-				result.permissions[this.context.application] = {
-					...permissions,
-				}
-
-			if (password != undefined)
-				if (!("old" in password))
-					result.password = await Password.hash(password.new, this.context.secret)
-				else if (!(await Password.verify(password.old, result.password, this.context.secret)))
-					result = undefined
-				else
-					result.password = await Password.hash(password.new, this.context.secret)
+			result = await User.update(this.context, result, user)
 		}
-		return !result ? undefined : User.model(await this.set(result), this.context.application)
+		return !result ? undefined : User.model(this.context, await this.set(result))
 	}
 	async join(invite: userwidgets.User.Invite): Promise<userwidgets.User | undefined> {
 		let result: Awaited<ReturnType<Users["join"]>>
@@ -80,16 +62,7 @@ export class Users {
 		if (!current)
 			result = undefined
 		else {
-			const permissions = userwidgets.User.Permissions.merge(
-				current.permissions[this.context.application] ?? {},
-				invite.permissions
-			)
-			if (!permissions)
-				result = undefined
-			else {
-				current.permissions[this.context.application] = permissions
-				result = User.model(await this.set(current), this.context.application)
-			}
+			result = User.model(this.context, await this.set(await User.update(this.context, current, invite)))
 		}
 		return result
 	}

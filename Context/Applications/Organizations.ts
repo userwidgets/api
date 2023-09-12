@@ -37,7 +37,7 @@ export class Organizations {
 						`user`,
 						{
 							...user,
-							permissions: (({ [id]: _, ...permissions }) => permissions)(user.permissions),
+							permissions: userwidgets.User.Permissions.remove(user.permissions, id, false),
 						},
 						{
 							ifMatch: ["*"],
@@ -116,9 +116,9 @@ export class Organizations {
 					const invited = [...added, ...(organization.users?.filter(user => typeof user == "object") ?? [])].reduce(
 						(result, invited) =>
 							typeof invited == "string"
-								? result.set(invited, ["user.view"])
-								: result.set(invited.user, invited.permissions ?? ["user.view"]),
-						new Map<userwidgets.Email, string[]>()
+								? result.set(invited, `${current.id}.user.view`)
+								: result.set(invited.user, invited.permissions ?? `${current.id}.user.view`),
+						new Map<userwidgets.Email, string>()
 					)
 					await this.removeUsers(id, removed)
 					const invites = (
@@ -127,7 +127,7 @@ export class Organizations {
 								const invite = await this.context.inviter.create({
 									email: user,
 									active: !gracely.Error.is(await this.fetchUser(user)),
-									permissions: userwidgets.User.Permissions.set({}, id, permissions) ?? {},
+									permissions: permissions,
 								})
 								return !invite ? undefined : { email: user, invite: invite }
 							})

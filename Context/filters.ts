@@ -8,14 +8,13 @@ export namespace filters {
 		let result: ReturnType<typeof filters.user> = user
 		if (!userwidgets.User.Permissions.check(permissions, "*", "user.view")) {
 			const organizations = Object.keys((({ "*": _, ...permissions }) => permissions)(permissions))
-			const common = organizations.filter(
-				organization =>
-					organization in user.permissions && userwidgets.User.Permissions.check(permissions, organization, "user.view")
+			const common = organizations.filter(organization =>
+				userwidgets.User.Permissions.check(permissions, organization, "user.view")
 			)
 			if (!common.length)
 				result = undefined
 			else
-				result.permissions = Object.fromEntries(Object.entries(user.permissions).filter(([id]) => common.includes(id)))
+				result.permissions = userwidgets.User.Permissions.filter(result.permissions, common)
 		}
 		return result
 	}

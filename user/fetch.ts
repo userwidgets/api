@@ -5,7 +5,7 @@ import { Context } from "../Context"
 import { router } from "../router"
 
 export async function fetch(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: userwidgets.User.Readable | gracely.Error
+	let result: userwidgets.User | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token")

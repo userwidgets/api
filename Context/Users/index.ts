@@ -162,7 +162,6 @@ export class Users {
 		if (gracely.Error.is(updated))
 			result = updated
 		else {
-			// changed from user.permissions. it was mutated. this must be correct?
 			if (updated.permissions)
 				await this.syncOrganizations(updated.email, updated.permissions)
 			result =

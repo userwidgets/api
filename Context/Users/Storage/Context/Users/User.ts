@@ -3,7 +3,7 @@ import { flagly } from "flagly"
 import { isoly } from "isoly"
 import { userwidgets } from "@userwidgets/model"
 import { isly } from "isly"
-import type { Users } from "."
+import type { Users } from "./index"
 import { Password } from "./Password"
 import { Permissions } from "./Permissions"
 

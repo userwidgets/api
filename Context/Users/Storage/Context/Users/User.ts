@@ -40,9 +40,7 @@ export namespace User {
 		patch: userwidgets.User.Invite | Partial<userwidgets.User.Changeable>
 	): Promise<User | undefined> {
 		let result: User | undefined
-		if (userwidgets.User.Invite.is(patch)) {
-			patch.permissions
-			source.permissions
+		if (userwidgets.User.Invite.is(patch))
 			result = {
 				...source,
 				permissions: {
@@ -52,7 +50,7 @@ export namespace User {
 					),
 				},
 			}
-		} else {
+		else {
 			const password = !patch.password
 				? source.password
 				: patch.password.new != patch.password.repeat

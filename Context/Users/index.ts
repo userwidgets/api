@@ -1,3 +1,4 @@
+import { flagly } from "flagly"
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
@@ -20,10 +21,11 @@ export class Users {
 	private application(): common.DurableObject.Client {
 		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
 	}
-	private async syncOrganizations(email: string, permissions: userwidgets.User.Permissions): Promise<void> {
+	private async syncOrganizations(email: string, permissions: userwidgets.User.Permissions | string): Promise<void> {
+		userwidgets.User.Permissions.organizations(permissions)
 		const organizations = (
 			await Promise.all(
-				Object.keys((({ "*": _, ...permissions }) => permissions)(permissions)).map(
+				userwidgets.User.Permissions.organizations(permissions).map(
 					async id => await this.application().get<userwidgets.Organization>(`organization/${id}`)
 				)
 			)
@@ -86,22 +88,30 @@ export class Users {
 	}
 	private async permittedInvites(
 		email: userwidgets.Email,
-		permissions: userwidgets.User.Permissions
-	): Promise<userwidgets.User.Permissions> {
-		const invitedOrganizationIds = Object.keys((({ "*": _, ...permissions }) => permissions)(permissions))
+		permission: userwidgets.User.Permissions
+	): Promise<userwidgets.User.Permissions>
+	private async permittedInvites(email: userwidgets.Email, permission: string): Promise<string>
+	private async permittedInvites(
+		email: userwidgets.Email,
+		permissions: userwidgets.User.Permissions | string
+	): Promise<userwidgets.User.Permissions | string> {
+		const parsed =
+			typeof permissions == "object" ? permissions : (flagly.parse(permissions) as userwidgets.User.Permissions)
+		const invitedOrganizationIds = userwidgets.User.Permissions.organizations(parsed)
 		const organizations = (
 			await Promise.all(invitedOrganizationIds.map(id => this.context.applications.organizations.fetch(id)))
 		).filter(userwidgets.Organization.is)
-		return {
-			...(permissions["*"] && { "*": permissions["*"] }),
+		const result = {
+			...(parsed["*"] && { "*": parsed["*"] }),
 			...Object.fromEntries(
-				Object.entries(permissions).filter(([id, _]) =>
+				Object.entries(parsed).filter(([id, _]) =>
 					organizations
 						.filter(organization => organization.users.includes(email))
 						.some(organization => organization.id == id)
 				)
 			),
 		}
+		return typeof permissions == "object" ? result : flagly.Flags.stringify(result)
 	}
 	async join(invite: userwidgets.User.Invite): Promise<userwidgets.User | gracely.Error> {
 		const permitted = await this.permittedInvites(invite.email, invite.permissions)
@@ -134,7 +144,10 @@ export class Users {
 					email,
 					{
 						...user,
-						permissions: { ...(current.permissions["*"] && { "*": current.permissions }), ...user.permissions },
+						permissions: userwidgets.User.Permissions.merge(
+							user.permissions,
+							userwidgets.User.Permissions.get(current.permissions, "*")
+						),
 					},
 					entityTag,
 					undefined
@@ -149,7 +162,7 @@ export class Users {
 		if (gracely.Error.is(updated))
 			result = updated
 		else {
-			if (user.permissions)
+			if (updated.permissions)
 				await this.syncOrganizations(updated.email, updated.permissions)
 			result =
 				permissions == undefined
@@ -181,7 +194,7 @@ export class Users {
 					? result
 					: result.reduce<userwidgets.User[]>(
 							(result, user) =>
-								Object.keys(user.permissions).some(id =>
+								userwidgets.User.Permissions.organizations(user.permissions).some(id =>
 									userwidgets.User.Permissions.check(permissions, id, "user.view")
 								)
 									? result.concat(filters.user(permissions, user) ?? [])

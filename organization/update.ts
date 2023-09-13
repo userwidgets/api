@@ -19,7 +19,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	let result: Response
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token")
+		: await context.authenticator.authenticate(request, "token", "admin")
 	const url: URL | undefined = common.url.parse(request.search.url)
 	const body: unknown = await request.body
 	const organization = userwidgets.Organization.Changeable.type.get(body)
@@ -45,6 +45,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 	else if (!credentials)
 		result = gracely.client.unauthorized()
 	else if (
+		// this action should be allowed without org.edit but only to invite. future issue
+		credentials != "admin" &&
 		organization.users &&
 		(!userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit", "user.invite") ||
 			!(
@@ -54,6 +56,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	)
 		result = gracely.client.unauthorized("forbidden")
 	else if (
+		credentials != "admin" &&
 		(organization.permissions || organization.name) &&
 		!userwidgets.User.Permissions.check(credentials.permissions, request.parameter.id, "org.edit")
 	)
@@ -63,7 +66,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 			request.parameter.id,
 			organization,
 			entityTag,
-			credentials.permissions
+			credentials == "admin" ? undefined : credentials.permissions
 		)
 		if (url && !gracely.Error.is(result)) {
 			result.invites.map(async invite => {

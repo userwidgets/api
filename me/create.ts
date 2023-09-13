@@ -1,3 +1,4 @@
+import { flagly } from "flagly"
 import { gracely } from "gracely"
 import { authly } from "authly"
 import { userwidgets } from "@userwidgets/model"
@@ -32,7 +33,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 			email: invite.email,
 			password: register.password,
 			name: register.name,
-			permissions: invite.permissions,
+			permissions: flagly.Flags.stringify(invite.permissions),
 		})
 		result = gracely.Error.is(response)
 			? response

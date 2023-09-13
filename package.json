@@ -1,6 +1,6 @@
 {
   "name": "@userwidgets/api",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "The userwidgets app api.",
   "private": true,
   "repository": "https://github.com/userwidgets/api",
@@ -11,7 +11,7 @@
   "homepage": "https://github.com/userwidgets/api",
   "main": "./dist/_worker.mjs",
   "module": "./dist/_worker.mjs",
-	"jest": {
+  "jest": {
     "transform": {
       "^.+\\.(j|t)sx?$": [
         "ts-jest",
@@ -78,7 +78,7 @@
     "typescript": "^5.0.3"
   },
   "dependencies": {
-    "@userwidgets/model": "^0.6.1",
+    "@userwidgets/model": "^0.8.0",
     "authly": "^3.0.6",
     "cloudly-http": "^0.1.4",
     "cloudly-rest": "^0.1.2",
@@ -90,8 +90,8 @@
     "isly": "^0.1.10",
     "isoly": "^2.0.16"
   },
-	"overrides": {
-		"semver": "^7.5.4",
-		"optionator": "^0.9.3"
-	}
+  "overrides": {
+    "semver": "^7.5.4",
+    "optionator": "^0.9.3"
+  }
 }

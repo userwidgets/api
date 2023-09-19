@@ -9,8 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v3
         with:
           path: |
             ~/cache
@@ -18,13 +18,13 @@ jobs:
             **/node_modules
           key: ${{ runner.os }}-cache
       - name: "Setup Node"
-        uses: "actions/setup-node@v2"
+        uses: "actions/setup-node@v3"
         with:
           node-version: 20
       - name: Update NPM
         run: npm install -g npm
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
       - name: Build
         run: npm run build
       - name: Lint

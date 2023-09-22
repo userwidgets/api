@@ -15,7 +15,7 @@ jobs:
       - name: "Checkout source code"
         uses: "actions/checkout@v4"
         with:
-          token: ${{ secrets.ADMIN_TOKEN }}
+          token: ${{ secrets.ADMIN_SECRET }}
       - name: "Setup Node"
         uses: "actions/setup-node@v3"
         with:
@@ -28,4 +28,4 @@ jobs:
         with:
           tag-prefix: 'release-'
         env:
-          GITHUB_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ADMIN_SECRET }}

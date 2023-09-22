@@ -140,21 +140,20 @@ export class Users {
 				result = current
 			else {
 				const permitted = userwidgets.User.Permissions.organizations(permissions)
-				const update = userwidgets.User.Permissions.organizations(current.permissions)
-					.filter(id => !permitted.includes(id))
-					.reduce(
-						(result, id) =>
-							userwidgets.User.Permissions.merge(result, userwidgets.User.Permissions.get(current.permissions, id)),
-						userwidgets.User.Permissions.merge(
-							user.permissions,
-							userwidgets.User.Permissions.get(current.permissions, "*")
-						)
-					)
 				const response = await this.update(
 					email,
 					{
 						...user,
-						permissions: update,
+						permissions: userwidgets.User.Permissions.organizations(current.permissions)
+							.filter(id => !permitted.includes(id))
+							.reduce(
+								(result, id) =>
+									userwidgets.User.Permissions.merge(result, userwidgets.User.Permissions.get(current.permissions, id)),
+								userwidgets.User.Permissions.merge(
+									user.permissions,
+									userwidgets.User.Permissions.get(current.permissions, "*")
+								)
+							),
 					},
 					entityTag,
 					undefined

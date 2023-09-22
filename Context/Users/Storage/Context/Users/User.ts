@@ -62,6 +62,7 @@ export namespace User {
 				? undefined
 				: {
 						...source,
+						...(patch.name && { name: patch.name }),
 						...(patch.permissions != undefined && {
 							permissions: {
 								...source.permissions,

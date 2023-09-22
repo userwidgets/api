@@ -140,7 +140,7 @@ export class Users {
 				result = current
 			else {
 				const permitted = userwidgets.User.Permissions.organizations(permissions)
-				const change = userwidgets.User.Permissions.organizations(current.permissions)
+				const update = userwidgets.User.Permissions.organizations(current.permissions)
 					.filter(id => !permitted.includes(id))
 					.reduce(
 						(result, id) =>
@@ -150,19 +150,19 @@ export class Users {
 							userwidgets.User.Permissions.get(current.permissions, "*")
 						)
 					)
-				const updated = await this.update(
+				const response = await this.update(
 					email,
 					{
 						...user,
-						permissions: change,
+						permissions: update,
 					},
 					entityTag,
 					undefined
 				)
 				result =
-					permissions == undefined || gracely.Error.is(updated)
-						? updated
-						: filters.user(permissions, updated) ?? gracely.client.unauthorized("forbidden")
+					permissions == undefined || gracely.Error.is(response)
+						? response
+						: filters.user(permissions, response) ?? gracely.client.unauthorized("forbidden")
 			}
 		} else {
 			result = await this.user(email).patch<userwidgets.User>(`user`, user, {

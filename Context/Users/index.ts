@@ -134,40 +134,44 @@ export class Users {
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
 		let result: Awaited<ReturnType<Users["update"]>>
-		let updated: userwidgets.User | gracely.Error
 		if (user.permissions && permissions && !userwidgets.User.Permissions.check(permissions, "*", "user.edit")) {
-			const current = await this.fetch(email, permissions)
+			const current = await this.fetch(email, undefined)
 			if (gracely.Error.is(current))
-				updated = current
-			else
-				updated = await this.update(
+				result = current
+			else {
+				const permitted = userwidgets.User.Permissions.organizations(permissions)
+				const change = userwidgets.User.Permissions.organizations(current.permissions)
+					.filter(id => !permitted.includes(id))
+					.reduce(
+						(result, id) =>
+							userwidgets.User.Permissions.merge(result, userwidgets.User.Permissions.get(current.permissions, id)),
+						userwidgets.User.Permissions.merge(
+							user.permissions,
+							userwidgets.User.Permissions.get(current.permissions, "*")
+						)
+					)
+				const updated = await this.update(
 					email,
 					{
 						...user,
-						permissions: userwidgets.User.Permissions.merge(
-							user.permissions,
-							userwidgets.User.Permissions.get(current.permissions, "*")
-						),
+						permissions: change,
 					},
 					entityTag,
 					undefined
 				)
-		} else
-			updated = await this.user(email).patch<userwidgets.User>(`user`, user, {
+				result =
+					permissions == undefined || gracely.Error.is(updated)
+						? updated
+						: filters.user(permissions, updated) ?? gracely.client.unauthorized("forbidden")
+			}
+		} else {
+			result = await this.user(email).patch<userwidgets.User>(`user`, user, {
 				application: this.context.referer,
 				ifMatch: [entityTag],
 				contentType: "application/json;charset=UTF-8",
 			})
-
-		if (gracely.Error.is(updated))
-			result = updated
-		else {
-			if (updated.permissions)
-				await this.syncOrganizations(updated.email, updated.permissions)
-			result =
-				permissions == undefined
-					? updated
-					: filters.user(permissions, updated) ?? gracely.client.unauthorized("forbidden")
+			if (!gracely.Error.is(result) && result.permissions)
+				await this.syncOrganizations(result.email, result.permissions)
 		}
 		return result
 	}

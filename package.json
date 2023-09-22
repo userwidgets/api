@@ -77,14 +77,14 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@userwidgets/model": "^0.8.2",
+    "@userwidgets/model": "^0.8.4",
     "authly": "^3.0.6",
     "cloudly-http": "^0.1.6",
     "cloudly-rest": "^0.1.3",
     "cloudly-router": "^0.1.1",
     "cloudly-storage": "^0.9.3",
     "cryptly": "^3.0.8",
-    "flagly": "^0.1.13",
+    "flagly": "^0.1.14",
     "gracely": "^2.0.4",
     "isly": "^0.1.10",
     "isoly": "^2.0.25"

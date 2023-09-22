@@ -35,8 +35,17 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized("refresh")
 	else if (user.name && request.parameter.email != credentials.email)
 		result = gracely.client.unauthorized("forbidden")
-	else if (user.permissions)
-		result = gracely.server.backendFailure("Changing permissions is not implemented.")
+	else if (
+		user.permissions &&
+		!((organizations, permissions) =>
+			userwidgets.User.Permissions.organizations(permissions).every(id => organizations.includes(id)))(
+			userwidgets.User.Permissions.organizations(user.permissions).filter(id =>
+				userwidgets.User.Permissions.check(credentials.permissions, id, "user.edit")
+			),
+			user.permissions
+		)
+	)
+		result = gracely.client.unauthorized("forbidden")
 	else
 		result = await context.users.update(request.parameter.email, user, entityTag, credentials.permissions)
 	return result

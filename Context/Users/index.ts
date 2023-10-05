@@ -80,11 +80,17 @@ export class Users {
 			? result
 			: filters.user(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
-	async authenticate(credentials: userwidgets.User.Credentials): Promise<userwidgets.User | gracely.Error> {
-		return await this.user(credentials.user).post<userwidgets.User>(`user/authenticate`, credentials, {
-			application: this.context.referer,
-			contentType: "application/json;charset=UTF-8",
-		})
+	async authenticate(
+		credentials: userwidgets.User.Credentials | userwidgets.User.Key
+	): Promise<userwidgets.User | gracely.Error> {
+		return await this.user("email" in credentials ? credentials.email : credentials.user).post<userwidgets.User>( //should work
+			`user/authenticate`,
+			credentials,
+			{
+				application: this.context.referer,
+				contentType: "application/json;charset=UTF-8",
+			}
+		)
 	}
 	private async permittedInvites(
 		email: userwidgets.Email,

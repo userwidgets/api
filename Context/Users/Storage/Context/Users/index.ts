@@ -36,12 +36,18 @@ export class Users {
 		const result = await this.get()
 		return result == undefined ? undefined : User.model(this.context, result)
 	}
-	async authenticate(credentials: userwidgets.User.Credentials): Promise<userwidgets.User.Key.Creatable | undefined> {
+	async authenticate(
+		credentials: userwidgets.User.Credentials | userwidgets.User.Key
+	): Promise<userwidgets.User.Key.Creatable | undefined> {
 		let result: Awaited<ReturnType<Users["authenticate"]>>
 		const current = await this.get()
 		if (!current)
 			result = undefined
-		else if (!(await Password.verify(credentials.password, current.password, this.context.secret)))
+		else if (
+			userwidgets.User.Credentials.is(credentials)
+				? !(await Password.verify(credentials.password, current.password, this.context.secret))
+				: credentials.email != current.email
+		)
 			result = undefined
 		else
 			result = userwidgets.User.Key.Creatable.from(User.model(this.context, current))

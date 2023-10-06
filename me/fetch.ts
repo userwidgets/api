@@ -1,6 +1,6 @@
-import * as gracely from "gracely"
-import * as authly from "authly"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { authly } from "authly"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 

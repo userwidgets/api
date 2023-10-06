@@ -17,14 +17,14 @@ export async function authenticate(
 	context: Context
 ): Promise<userwidgets.User.Key.Creatable | gracely.Error> {
 	let result: Awaited<ReturnType<typeof authenticate>>
-	const credentials: unknown = await request.body
-	const authorization = Body.type.get(credentials)
-	if (!authorization)
-		result = gracely.client.flawedContent(userwidgets.User.Credentials.flaw(credentials))
+	const body: unknown = await request.body
+	const credentials = Body.type.get(body)
+	if (!credentials)
+		result = gracely.client.flawedContent(userwidgets.User.Credentials.flaw(body))
 	else if (gracely.Error.is(context.users))
 		result = context.users
 	else
-		result = (await context.users.authenticate(authorization)) ?? gracely.client.unauthorized()
+		result = (await context.users.authenticate(credentials)) ?? gracely.client.unauthorized()
 	return result
 }
 

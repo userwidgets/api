@@ -83,7 +83,7 @@ export class Users {
 	async authenticate(
 		credentials: userwidgets.User.Credentials | userwidgets.User.Key
 	): Promise<userwidgets.User | gracely.Error> {
-		return await this.user("email" in credentials ? credentials.email : credentials.user).post<userwidgets.User>( //should work
+		return await this.user("email" in credentials ? credentials.email : credentials.user).post<userwidgets.User>(
 			`user/authenticate`,
 			credentials,
 			{

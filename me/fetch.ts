@@ -1,7 +1,6 @@
-import * as gracely from "gracely"
-import * as authly from "authly"
-import * as model from "@userwidgets/model"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { authly } from "authly"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import { router } from "../router"
 
@@ -9,12 +8,14 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	let result: authly.Token | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "user")
+		: await context.authenticator.authenticate(request, "user", "token")
 
 	if (gracely.Error.is(context.users))
 		result = context.users
-	else if (!model.User.Credentials.is(credentials))
+	else if (!credentials)
 		result = gracely.client.unauthorized("Failed to authorize request.")
+	else if (gracely.Error.is(credentials))
+		result = credentials
 	else if (gracely.Error.is(context.authenticator))
 		result = context.authenticator
 	else {

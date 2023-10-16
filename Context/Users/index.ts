@@ -140,7 +140,7 @@ export class Users {
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.User | gracely.Error> {
 		let result: Awaited<ReturnType<Users["update"]>>
-		if (user.permissions && permissions && !userwidgets.User.Permissions.check(permissions, "*", "user.edit")) {
+		if (user.permissions && permissions && !userwidgets.User.Permissions.check(permissions, "*", "user.admin")) {
 			const current = await this.fetch(email, undefined)
 			if (gracely.Error.is(current))
 				result = current

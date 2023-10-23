@@ -71,7 +71,8 @@
     "rollup-plugin-dotenv": "^0.5.0",
     "ts-jest": "^29.1.1",
     "tslib": "^2.6.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "wrangler": "^3.14.0"
   },
   "dependencies": {
     "@userwidgets/model": "^0.8.11",
@@ -84,7 +85,6 @@
     "flagly": "^0.2.1",
     "gracely": "^2.0.4",
     "isly": "^0.1.10",
-    "isoly": "^2.0.25",
-    "wrangler": "^3.14.0"
+    "isoly": "^2.0.25"
   }
 }

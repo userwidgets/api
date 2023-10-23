@@ -1,4 +1,4 @@
-import terser from "@rollup/plugin-terser"
+import terser from '@rollup/plugin-terser'
 // plugin-node-resolve and plugin-commonjs are required for a rollup bundled project
 // to resolve dependencies from node_modules. See the documentation for these plugins
 // for more details.
@@ -6,28 +6,27 @@ import { nodeResolve } from "@rollup/plugin-node-resolve"
 import commonjs from "@rollup/plugin-commonjs"
 import typescript from "@rollup/plugin-typescript"
 import json from "@rollup/plugin-json"
-import path from "path"
-import { fileURLToPath } from "url"
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const nodeEnvironment = process.env.NODE_ENV
 
-export default [{
-		input: "index.ts",
-		output: {
-			exports: "named",
-			format: "es",
-			file: "dist/_worker.js",
-			sourcemap: true,
-			sourcemapPathTransform: (relativeSourcePath, _) => path.resolve(__dirname, relativeSourcePath.replace(/^(..\/)+/, "")),
-		},
-		plugins: [commonjs(), nodeResolve({ browser: true }), terser(), typescript({ tsconfig: "./tsconfig.json" }), json()],
-		watch: {
-			clearScreen: false,
-		},
-		onwarn: warning => {
-			if ( warning.code !== 'THIS_IS_UNDEFINED' )
-				console.warn( warning.message );
-		},
+export default {
+  input: "index.ts",
+  output: {
+    exports: "named",
+    format: "es",
+    file: "dist/_worker.js",
+    sourcemap: true,
+		sourcemapPathTransform: relativeSourcePath => 
+			relativeSourcePath.replace(/^(\.\.\/)(?=node_modules)/, "../").replace(/^(\.\.\/)+(?!node_modules)/, "../"),
+  },
+  plugins: [commonjs(), nodeResolve({ browser: true }), typescript({ resolveJsonModule: true }), json(), ...(nodeEnvironment == "production" ? [terser()] : [])],
+	watch: {
+		clearScreen: false,
 	},
-]
+	onwarn: warning => {
+		if ( warning.code !== 'THIS_IS_UNDEFINED' )
+			console.warn( warning.message );
+	},
+}
+
+

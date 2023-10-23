@@ -58,8 +58,7 @@
 			"label": "TypeScript watcher",
 			"command": "./node_modules/.bin/rollup",
 			"args": [
-				"--config",
-				"rollup.dev.config.js",
+				"-c",
 				"--watch"
 			],
 			"isBackground": true,

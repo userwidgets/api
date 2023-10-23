@@ -1,30 +1,14 @@
 {
 	"configurations": [
 		{
-			"name": "Miniflare (launch)",
-			"type": "node",
-			"request": "launch",
-			"runtimeExecutable": "node",
-			"runtimeArgs": [
-				"--experimental-vm-modules",
-				"--inspect",
-				"./node_modules/miniflare/dist/src/cli.js",
-				"dist/_worker.js",
-				"--wrangler-env",
-				"miniflare",
-				"--watch",
-				"-B",
-				""
-			], 
-			"skipFiles": ["<node_internals>/**"],
-			"preLaunchTask": "TypeScript watcher"
-		},
-		{
-			"name": "Miniflare (attach)",
+			"name": "Wrangler (attatch)",
 			"type": "node",
 			"request": "attach",
-			"skipFiles": ["<node_internals>/**"],
-			"port": 9230
+			"port": 9230,
+			"cwd": "/",
+			"resolveSourceMapLocations": null,
+			"attachExistingChildren": false,
+			"autoAttachChildProcesses": false
 		}
 	]
 }

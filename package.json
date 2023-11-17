@@ -75,7 +75,7 @@
     "wrangler": "^3.14.0"
   },
   "dependencies": {
-    "@userwidgets/model": "^0.8.11",
+    "@userwidgets/model": "^0.8.13",
     "authly": "^3.0.7",
     "cloudly-http": "^0.1.6",
     "cloudly-rest": "^0.1.3",

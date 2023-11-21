@@ -11,7 +11,10 @@ import { Users } from "./Users"
 export class Context {
 	#referer?: string
 	get referer(): string | undefined {
-		return (this.#referer ??= common.url.parse(this.request.header.referer)?.hostname ?? this.request.header.referer)
+		return (this.#referer ??=
+			typeof this.request.header.application == "string"
+				? this.request.header.application
+				: common.url.parse(this.request.header.referer)?.hostname ?? this.request.header.referer)
 	}
 	#applications?: Applications | gracely.Error
 	get applications(): Applications | gracely.Error {

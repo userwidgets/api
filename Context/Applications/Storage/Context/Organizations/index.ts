@@ -27,11 +27,15 @@ export class Organizations {
 			  ).organizations[organization.id]
 	}
 	private constructor(private readonly context: { applications: Applications }) {}
-	async id(retries = 5): Promise<userwidgets.Organization.Identifier | undefined> {
-		const application = await this.context.applications.get()
-		const id = cryptly.Identifier.generate(userwidgets.Organization.Identifier.length)
-		return !application || retries <= 0 ? undefined : !(id in application.organizations) ? id : await this.id(--retries)
+	async id(
+		id = cryptly.Identifier.generate(userwidgets.Organization.Identifier.length),
+		retries = 5
+	): Promise<userwidgets.Organization.Identifier | undefined> {
+		return (await this.context.applications.get())?.organizations[id] && retries > 0
+			? await this.id(undefined, --retries)
+			: id
 	}
+
 	async fetch(id: userwidgets.Organization.Identifier): Promise<userwidgets.Organization | undefined> {
 		const application = await this.context.applications.get()
 		return !application || !application.organizations[id]
@@ -73,20 +77,15 @@ export class Organizations {
 		return result
 	}
 	async create(
-		organization: userwidgets.Organization.Creatable & { id?: userwidgets.Organization.Identifier }
+		organization: userwidgets.Organization.Creatable & Required<Pick<userwidgets.Organization.Creatable, "id">>
 	): Promise<userwidgets.Organization | undefined> {
 		let result: Awaited<ReturnType<Organizations["create"]>>
 		const application = await this.context.applications.get()
 		if (!application)
 			result = undefined
 		else {
-			const id = organization.id ?? (await this.id())
-			if (!id)
-				result = undefined
-			else {
-				const created = await this.set(Organization.from({ ...organization, id }))
-				result = !created ? undefined : Organization.model(created)
-			}
+			const created = await this.set(Organization.from(organization))
+			result = !created ? undefined : Organization.model(created)
 		}
 		return result
 	}

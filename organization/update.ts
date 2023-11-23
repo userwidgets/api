@@ -69,27 +69,29 @@ export async function update(request: http.Request, context: Context): Promise<h
 			credentials == "admin" ? undefined : credentials.permissions
 		)
 		if (url && !gracely.Error.is(result)) {
-			result.invites.map(async invite => {
-				const result = { ...invite }
-				if (!gracely.Error.is(invite)) {
-					const inviteUrl = new URL(url.href)
-					inviteUrl.searchParams.set(
-						userwidgets.Configuration.addDefault(
-							{ inviteParameterName: context.environment.inviteParameterName },
-							"inviteParameterName"
-						).inviteParameterName,
-						invite.invite
-					)
-					Object.assign(result, {
-						response: await context.email(
-							invite.email,
-							`You have been invited to join an organization.`,
-							`Invitation: ${inviteUrl}`
-						),
-					})
-				}
-				return result
-			})
+			await Promise.all(
+				result.invites.map(async invite => {
+					const result = { ...invite }
+					if (!gracely.Error.is(invite)) {
+						const inviteUrl = new URL(url.href)
+						inviteUrl.searchParams.set(
+							userwidgets.Configuration.addDefault(
+								{ inviteParameterName: context.environment.inviteParameterName },
+								"inviteParameterName"
+							).inviteParameterName,
+							invite.invite
+						)
+						Object.assign(result, {
+							response: await context.email(
+								invite.email,
+								`You have been invited to join an organization.`,
+								`Invitation: ${inviteUrl}`
+							),
+						})
+					}
+					return result
+				})
+			)
 		}
 	}
 	return result

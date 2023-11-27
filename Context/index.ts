@@ -68,7 +68,7 @@ export class Context {
 					],
 					from: {
 						email: this.environment.email,
-						name: "Userwidgets",
+						name: this.environment.emailName,
 					},
 					subject: subject,
 					content: [

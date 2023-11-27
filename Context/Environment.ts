@@ -35,6 +35,8 @@ export interface Environment extends Record<string, undefined | string | Durable
 	// See README.md for email-settings.
 	/** The email address users see in the from field in emails. eg: no-reply@example.com */
 	email?: string
+	/** The email name users see in the from field in emails. eg: no-reply@example.com */
+	emailName?: string
 	/**
 	 * RSA private key for dkim
 	 * Set as encrypted value in Cloudflare.

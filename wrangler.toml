@@ -27,6 +27,7 @@ durable_objects.bindings = [
 [env.production.vars]
 publicKey = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv288G3gLlnyt0EN5pGBcG04Dr6cUWhz6f444Q4uxAGBiBOo+vNW9oq6r5eFV4moYL66jeujAvY9yx7ZJClKnj6UilMAkvFgQ7KgvDcwATZ8zMTa9R2WQD36h1/C6tGfpU8IX31qCOHwml+BKYp5hd7MGKrH6ChWohcyPAfW6oeWd+cEfsqbgJLssW0sWXZUD1wtwtsaNySQ/aftrKiYZ6duIV/qqNeC6jbRJFhRu8XLYRzBSrYGHm+DA/oNBNXYzsVzBWL5fGae6Lz0qghF0+d8Ha/3t/4cI+r5z7VKeVIHatWXqel693agQcsi0SYo/dfO0LsIim6eXwBc5zKQwu5VI4pAG04UF8+hr6C81dKjfFDnAv4Ld5nQwMRRWJusqgecoPqH1DKnqPUeeb87gLAkcTwZG2sAYJhsuXyIeW9lXlTldc1N3N82cKhvCddEQlOKnHDRfDiFokrWvhWoJeyDaNvumAn73WYHcoBzXoGaEMXw1h4DBatW9opAKjyx5wu4R6KZi8105F2cohE3kilpXjdLSaX1/HIhjBa73D2vjDETwWKno85+lZPfrf3O9LUFqVBdCOM7QwM0ZJvYOHPzNmKodR5mH0lg8ft1LRyr99gLHtBtA0IqIhMkWuO4avqSTgYrqgagZuFseUN+uM/ESQpOH/So3G1HLA3iw5ksCAwEAAQ=="
 email = "no-reply@userwidgets.com"
+emailName = "Userwidgets"
 issuer = "userwidgets"
 
 [env.preview]
@@ -37,6 +38,7 @@ durable_objects.bindings = [
 ]
 [env.preview.vars]
 email = "no-reply@userwidgets.com"
+emailName = "Userwidgets-preview"
 issuer = "userwidgets-preview"
 
 [env.local]

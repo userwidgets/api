@@ -44,6 +44,7 @@ export namespace User {
 			result = {
 				...source,
 				permissions: {
+					...source.permissions,
 					[context.application]: userwidgets.User.Permissions.merge(
 						source.permissions[context.application] ?? {},
 						patch.permissions

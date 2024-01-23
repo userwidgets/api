@@ -79,7 +79,8 @@ export class Context {
 					],
 				},
 			})
-			const response = http.Response.from(await fetch(request.url.toString(), await http.Request.to(request)))
+
+			const response = await http.fetch(request)
 			result = { ...response, body: await response.body }
 		}
 		return result

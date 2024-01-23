@@ -1,6 +1,6 @@
-import { Signer } from "cryptly"
-import * as gracely from "gracely"
-import * as http from "cloudly-http"
+import { cryptly } from "cryptly"
+import { gracely } from "gracely"
+import { http } from "cloudly-http"
 import { Context } from "../Context"
 import * as data from "../package.json"
 import { router } from "../router"
@@ -15,7 +15,12 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else {
 		let publicKey: string
 		if (context.environment.publicKey && context.environment.privateKey) {
-			const signer = Signer.create("RSA", "SHA-256", context.environment.publicKey, context.environment.privateKey)
+			const signer = cryptly.Signer.create(
+				"RSA",
+				"SHA-256",
+				context.environment.publicKey,
+				context.environment.privateKey
+			)
 			if (await signer.verify("abc", await signer.sign("abc"))) {
 				publicKey = context.environment.publicKey
 				switch ((request.search.keyFormat ?? "").toLowerCase()) {

@@ -12,6 +12,7 @@ export interface User extends Omit<userwidgets.User.Creatable, "password" | "per
 	password: cryptly.Password.Hash
 	created: isoly.DateTime
 	modified: isoly.DateTime
+	twoFactor?: string
 }
 export namespace User {
 	export const type = isly.object<User>({
@@ -21,9 +22,10 @@ export namespace User {
 		password: isly.fromIs("cryptly.Password.Hash", cryptly.Password.Hashed.is),
 		created: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
 		modified: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
+		twoFactor: isly.string().optional(),
 	})
 	export function model(context: Users["context"], user: User): userwidgets.User {
-		return (({ password, permissions, ...user }) => ({
+		return (({ password, permissions, twoFactor, ...user }) => ({
 			...user,
 			permissions: flagly.Flags.stringify(permissions[context.application] ?? {}),
 		}))(user)
@@ -71,6 +73,7 @@ export namespace User {
 							},
 						}),
 						password,
+						twoFactor: patch.twoFactor,
 				  }
 		}
 		return result

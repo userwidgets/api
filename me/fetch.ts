@@ -19,7 +19,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (gracely.Error.is(context.authenticator))
 		result = context.authenticator
 	else {
-		const response = await context.users.authenticate(credentials)
+		const response = await context.users.authenticate(
+			credentials,
+			typeof request.header.twoFactor == "string" ? request.header.twoFactor : undefined
+		)
 		result = gracely.Error.is(response)
 			? response
 			: (await context.authenticator.sign(response)) ??

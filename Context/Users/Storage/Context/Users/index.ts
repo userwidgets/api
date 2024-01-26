@@ -57,7 +57,6 @@ export class Users {
 			result = gracely.client.forbidden("Invalid two factor code.")
 		else {
 			const user = User.model(this.context, current)
-			current.twoFactor
 			result = userwidgets.User.Key.Creatable.from(user)
 		}
 		return result

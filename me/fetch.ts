@@ -21,7 +21,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else {
 		const response = await context.users.authenticate(
 			credentials,
-			typeof request.header.twoFactor == "string" ? request.header.twoFactor : undefined
+			typeof request.header["authorization-2fa"] == "string" ? request.header["authorization-2fa"] : undefined
 		)
 		result = gracely.Error.is(response)
 			? response

@@ -26,7 +26,7 @@ export async function authenticate(
 	else
 		result = await context.users.authenticate(
 			credentials,
-			typeof request.header.twoFactor == "string" ? request.header.twoFactor : undefined
+			typeof request.header["authorization-2fa"] == "string" ? request.header["authorization-2fa"] : undefined
 		)
 	return result
 }

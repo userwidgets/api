@@ -90,7 +90,7 @@ export class Users {
 			{
 				application: this.context.referer,
 				contentType: "application/json;charset=UTF-8",
-				...(twoFactor ? { twoFactor } : {}),
+				...(twoFactor ? { "authorization-2fa": twoFactor } : {}),
 			}
 		)
 	}

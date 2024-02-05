@@ -6,13 +6,14 @@ import { isly } from "isly"
 import type { Users } from "./index"
 import { Password } from "./Password"
 import { Permissions } from "./Permissions"
+import { twoFactor } from "./twoFactor"
 
 export interface User extends Omit<userwidgets.User.Creatable, "password" | "permissions"> {
 	permissions: Permissions
 	password: cryptly.Password.Hash
 	created: isoly.DateTime
 	modified: isoly.DateTime
-	twoFactor?: string
+	twoFactor?: { key?: string; recoveryCodes?: cryptly.Password.Hash[] }
 }
 export namespace User {
 	export const type = isly.object<User>({
@@ -22,7 +23,12 @@ export namespace User {
 		password: isly.fromIs("cryptly.Password.Hash", cryptly.Password.Hashed.is),
 		created: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
 		modified: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
-		twoFactor: isly.string().optional(),
+		twoFactor: isly
+			.object<Required<User>["twoFactor"]>({
+				key: isly.string().optional(),
+				recoveryCodes: isly.fromIs("Hash", cryptly.Password.Hashed.is).array().optional(),
+			})
+			.optional(),
 	})
 	export function model(context: Users["context"], user: User): userwidgets.User {
 		return (({ password, permissions, twoFactor, ...user }) => ({
@@ -73,7 +79,10 @@ export namespace User {
 							},
 						}),
 						password,
-						twoFactor: patch.twoFactor,
+						twoFactor: {
+							key: patch.twoFactor?.key,
+							recoveryCodes: await twoFactor.hash(patch.twoFactor?.backupCodes, context.secret),
+						},
 				  }
 		}
 		return result

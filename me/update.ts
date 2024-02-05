@@ -14,7 +14,6 @@ export async function update(request: http.Request, context: Context): Promise<h
 		: await context.inviter.verify(
 				request.parameter.invite?.split(".").length == 2 ? request.parameter.invite + "." : request.parameter.invite
 		  )
-
 	if (gracely.Error.is(invite))
 		result = invite
 	else if (gracely.Error.is(context.authenticator))

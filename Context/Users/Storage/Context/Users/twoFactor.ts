@@ -20,12 +20,11 @@ export namespace twoFactor {
 		secret: string
 	): Promise<cryptly.Password.Hash[] | undefined> {
 		let result: cryptly.Password.Hash[] | undefined
-		for (let index = 0; index < backupCodes.length; index++) {
+		for (let index = 0; index < backupCodes.length; index++)
 			if (await Password.verify(code, backupCodes[index], secret)) {
-				result = backupCodes.splice(index, 1)
+				result = backupCodes.slice(0, index).concat(...backupCodes.slice(index + 1, backupCodes.length))
 				break
 			}
-		}
 		return result
 	}
 }

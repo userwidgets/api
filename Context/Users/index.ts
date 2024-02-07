@@ -81,7 +81,8 @@ export class Users {
 			: filters.user(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	async authenticate(
-		credentials: userwidgets.User.Credentials | userwidgets.User.Key
+		credentials: userwidgets.User.Credentials | userwidgets.User.Key,
+		twoFactor?: string
 	): Promise<userwidgets.User | gracely.Error> {
 		return await this.user("email" in credentials ? credentials.email : credentials.user).post<userwidgets.User>(
 			`user/authenticate`,
@@ -89,6 +90,7 @@ export class Users {
 			{
 				application: this.context.referer,
 				contentType: "application/json;charset=UTF-8",
+				...(twoFactor ? { "authorization-2fa": twoFactor } : {}),
 			}
 		)
 	}

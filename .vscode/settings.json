@@ -10,8 +10,8 @@
 		"node_modules": true,
 		"*.code-workspace": true,
 		"*.config.js": true,
-		"*.toml": true,
-    "stencil.config.ts": true,
+		"*.toml": false,
+		"stencil.config.ts": true,
 	},
 	"search.exclude": {
 		".*": false,
@@ -25,7 +25,7 @@
 		"*.code-workspace": false,
 		"*.config.js": false,
 		"*.toml": false,
-    "stencil.config.ts": false,
+		"stencil.config.ts": false,
 	},
 	"editor.tabSize": 2,
 	"editor.detectIndentation": false,
@@ -55,6 +55,6 @@
 		"uply",
 		"userwidgets"
 	],
-  "debug.javascript.autoAttachFilter": "disabled",
+	"debug.javascript.autoAttachFilter": "disabled",
 	"liveServer.settings.root": "/dist"
 }

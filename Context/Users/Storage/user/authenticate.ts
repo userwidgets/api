@@ -24,7 +24,10 @@ export async function authenticate(
 	else if (gracely.Error.is(context.users))
 		result = context.users
 	else
-		result = (await context.users.authenticate(credentials)) ?? gracely.client.unauthorized()
+		result = await context.users.authenticate(
+			credentials,
+			typeof request.header["authorization-2fa"] == "string" ? request.header["authorization-2fa"] : undefined
+		)
 	return result
 }
 

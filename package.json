@@ -1,6 +1,6 @@
 {
 	"name": "@userwidgets/api",
-	"version": "0.7.16",
+	"version": "0.7.17",
 	"description": "The userwidgets app api.",
 	"private": true,
 	"repository": "https://github.com/userwidgets/api",

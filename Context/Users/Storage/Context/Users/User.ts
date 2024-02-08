@@ -79,10 +79,12 @@ export namespace User {
 							},
 						}),
 						password,
-						twoFactor: {
-							key: patch.twoFactor?.key,
-							recoveryCodes: await twoFactor.hash(patch.twoFactor?.recoveryCodes, context.secret),
-						},
+						twoFactor: patch.twoFactor
+							? {
+									key: patch.twoFactor?.key,
+									recoveryCodes: await twoFactor.hash(patch.twoFactor?.recoveryCodes, context.secret),
+							  }
+							: source.twoFactor,
 				  }
 		}
 		return result

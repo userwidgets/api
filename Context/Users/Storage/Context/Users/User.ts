@@ -34,6 +34,7 @@ export namespace User {
 		return (({ password, permissions, twoFactor, ...user }) => ({
 			...user,
 			permissions: flagly.Flags.stringify(permissions[context.application] ?? {}),
+			...("twoFactor" in user && user.twoFactor ? { twoFactor: true } : {}),
 		}))(user)
 	}
 	export async function update(
@@ -89,33 +90,14 @@ export namespace User {
 		}
 		return result
 	}
-	export async function from(
-		context: Users["context"],
-		user: userwidgets.User,
-		secret: Pick<User, "password">
-	): Promise<User>
-	export async function from(context: Users["context"], user: userwidgets.User.Creatable): Promise<User | undefined>
-	export async function from(
-		context: Users["context"],
-		source: userwidgets.User | userwidgets.User.Creatable,
-		extra?: Pick<User, "password">
-	): Promise<User | undefined> {
+	export async function from(context: Users["context"], user: userwidgets.User.Creatable): Promise<User | undefined> {
 		const now = isoly.DateTime.now()
-		return userwidgets.User.is(source)
-			? !extra
-				? undefined
-				: {
-						...source,
-						...extra,
-						permissions: { [context.application]: flagly.parse(source.permissions) as userwidgets.User.Permissions },
-						modified: now,
-				  }
-			: source.password.new != source.password.repeat
+		return user.password.new != user.password.repeat
 			? undefined
 			: {
-					...source,
-					password: await Password.hash(source.password.new, context.secret),
-					permissions: { [context.application]: flagly.parse(source.permissions) as userwidgets.User.Permissions },
+					...user,
+					password: await Password.hash(user.password.new, context.secret),
+					permissions: { [context.application]: flagly.parse(user.permissions) as userwidgets.User.Permissions },
 					modified: now,
 					created: now,
 			  }

@@ -90,7 +90,7 @@ export namespace User {
 		}
 		return result
 	}
-	export async function from(context: Users["context"], user: userwidgets.User.Creatable): Promise<User | undefined> {
+	export async function create(context: Users["context"], user: userwidgets.User.Creatable): Promise<User | undefined> {
 		const now = isoly.DateTime.now()
 		return user.password.new != user.password.repeat
 			? undefined

@@ -25,7 +25,7 @@ export class Users {
 		if (await this.get())
 			result = undefined
 		else {
-			const created = await User.from(this.context, user)
+			const created = await User.create(this.context, user)
 			if (!created)
 				result = undefined
 			else

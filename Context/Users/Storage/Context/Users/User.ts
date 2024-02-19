@@ -34,7 +34,7 @@ export namespace User {
 		return (({ password, permissions, twoFactor, ...user }) => ({
 			...user,
 			permissions: flagly.Flags.stringify(permissions[context.application] ?? {}),
-			...("twoFactor" in user && user.twoFactor ? { twoFactor: true } : {}),
+			twoFactor: "twoFactor" in user && user.twoFactor ? true : false,
 		}))(user)
 	}
 	export async function update(

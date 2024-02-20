@@ -31,10 +31,10 @@ export namespace User {
 			.optional(),
 	})
 	export function model(context: Users["context"], user: User): userwidgets.User {
-		return (({ password, permissions, twoFactor, ...user }) => ({
+		return (({ password, permissions, ...user }) => ({
 			...user,
 			permissions: flagly.Flags.stringify(permissions[context.application] ?? {}),
-			twoFactor: "twoFactor" in user && user.twoFactor ? true : false,
+			twoFactor: user.twoFactor ? true : false,
 		}))(user)
 	}
 	export async function update(

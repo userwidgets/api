@@ -74,7 +74,7 @@
 		"wrangler": "3.28.3"
 	},
 	"dependencies": {
-		"@userwidgets/model": "0.8.24",
+		"@userwidgets/model": "userwidgets/model#password-change",
 		"authly": "^3.0.11",
 		"cloudly-http": "^0.1.7",
 		"cloudly-rest": "^0.1.3",

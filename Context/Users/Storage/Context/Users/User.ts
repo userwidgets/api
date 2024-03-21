@@ -96,8 +96,11 @@ export namespace User {
 					: source.twoFactor,
 				modified: {
 					other: isoly.DateTime.now(),
-					password:
-						patch.password || typeof source.modified != "object" ? isoly.DateTime.now() : source.modified.password,
+					password: patch.password
+						? isoly.DateTime.now()
+						: typeof source.modified == "string"
+						? source.modified
+						: source.modified.password,
 				},
 			}
 		}
@@ -111,7 +114,7 @@ export namespace User {
 					...user,
 					password: await Password.hash(user.password.new, context.secret),
 					permissions: { [context.application]: flagly.parse(user.permissions) as userwidgets.User.Permissions },
-					modified: now,
+					modified: { other: now, password: now },
 					created: now,
 			  }
 	}

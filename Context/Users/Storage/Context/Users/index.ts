@@ -22,7 +22,7 @@ export class Users {
 				...user,
 				modified: {
 					other: isoly.DateTime.now(),
-					password: typeof user.modified != "object" ? isoly.DateTime.now() : user.modified.password,
+					password: typeof user.modified != "object" ? user.modified : user.modified.password,
 				},
 			}))
 	}

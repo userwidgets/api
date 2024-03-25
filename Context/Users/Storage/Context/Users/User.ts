@@ -12,7 +12,7 @@ export interface User extends Omit<userwidgets.User.Creatable, "password" | "per
 	permissions: Permissions
 	password: cryptly.Password.Hash
 	created: isoly.DateTime
-	modified: isoly.DateTime
+	modified: isoly.DateTime | { other: isoly.DateTime; password: isoly.DateTime }
 	twoFactor?: { key?: string; recoveryCodes?: cryptly.Password.Hash[] }
 }
 export namespace User {
@@ -22,7 +22,13 @@ export namespace User {
 		permissions: Permissions.type,
 		password: isly.fromIs("cryptly.Password.Hash", cryptly.Password.Hashed.is),
 		created: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
-		modified: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
+		modified: isly.union(
+			isly.fromIs("isoly.DateTime", isoly.DateTime.is),
+			isly.object({
+				other: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
+				password: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
+			})
+		),
 		twoFactor: isly
 			.object<Required<User>["twoFactor"]>({
 				key: isly.string().optional(),
@@ -49,6 +55,7 @@ export namespace User {
 		patch: userwidgets.User.Invite | Partial<userwidgets.User.Changeable>
 	): Promise<User | undefined> {
 		let result: User | undefined
+		let password: cryptly.Password.Hash | undefined
 		if (userwidgets.User.Invite.is(patch))
 			result = {
 				...source,
@@ -60,33 +67,42 @@ export namespace User {
 					),
 				},
 			}
-		else {
-			const password = !patch.password
+		else if (
+			!(password = !patch.password
 				? source.password
 				: patch.password.new != patch.password.repeat
 				? undefined
 				: "old" in patch.password && !(await Password.verify(patch.password.old, source.password, context.secret))
 				? undefined
-				: await Password.hash(patch.password.new, context.secret)
-			result = !password
-				? undefined
-				: {
-						...source,
-						...(patch.name && { name: patch.name }),
-						...(patch.permissions != undefined && {
-							permissions: {
-								...source.permissions,
-								[context.application]: flagly.parse(patch.permissions) as userwidgets.User.Permissions,
-							},
-						}),
-						password,
-						twoFactor: patch.twoFactor
-							? {
-									key: patch.twoFactor?.key,
-									recoveryCodes: await twoFactor.hash(patch.twoFactor?.recoveryCodes, context.secret),
-							  }
-							: source.twoFactor,
-				  }
+				: await Password.hash(patch.password.new, context.secret))
+		)
+			result = undefined
+		else {
+			result = {
+				...source,
+				...(patch.name && { name: patch.name }),
+				...(patch.permissions != undefined && {
+					permissions: {
+						...source.permissions,
+						[context.application]: flagly.parse(patch.permissions) as userwidgets.User.Permissions,
+					},
+				}),
+				password,
+				twoFactor: patch.twoFactor
+					? {
+							key: patch.twoFactor?.key,
+							recoveryCodes: await twoFactor.hash(patch.twoFactor?.recoveryCodes, context.secret),
+					  }
+					: source.twoFactor,
+				modified: {
+					other: isoly.DateTime.now(),
+					password: patch.password
+						? isoly.DateTime.now()
+						: typeof source.modified == "string"
+						? source.modified
+						: source.modified.password,
+				},
+			}
 		}
 		return result
 	}
@@ -98,7 +114,7 @@ export namespace User {
 					...user,
 					password: await Password.hash(user.password.new, context.secret),
 					permissions: { [context.application]: flagly.parse(user.permissions) as userwidgets.User.Permissions },
-					modified: now,
+					modified: { other: now, password: now },
 					created: now,
 			  }
 	}

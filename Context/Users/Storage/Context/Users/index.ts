@@ -11,14 +11,20 @@ import { User } from "./User"
 export class Users {
 	private cache?: User
 	private get: () => Promise<User | undefined>
-	private set: (user: Omit<User, "modified">) => Promise<User>
+	private set: (user: User) => Promise<User>
 	private constructor(
 		storage: { object: common.DurableObject<User> },
 		private readonly context: { application: string; secret: string }
 	) {
 		this.get = async () => (this.cache ??= await storage.object.get("data"))
 		this.set = async user =>
-			(this.cache = await storage.object.set("data", { ...user, modified: isoly.DateTime.now() }))
+			(this.cache = await storage.object.set("data", {
+				...user,
+				modified: {
+					other: isoly.DateTime.now(),
+					password: typeof user.modified != "object" ? user.modified : user.modified.password,
+				},
+			}))
 	}
 	async create(user: userwidgets.User.Creatable): Promise<userwidgets.User | undefined> {
 		let result: userwidgets.User | undefined

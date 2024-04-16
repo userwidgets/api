@@ -183,7 +183,7 @@ export class Users {
 		return result
 	}
 	async remove2fa(email: userwidgets.Email): Promise<userwidgets.User | gracely.Error> {
-		return await this.user(email).delete<userwidgets.User>("user/2fa")
+		return await this.user(email).delete<userwidgets.User>("user/2fa", { application: this.context.referer })
 	}
 	async list(permissions?: userwidgets.User.Permissions): Promise<userwidgets.User[] | gracely.Error> {
 		let result: Awaited<ReturnType<Users["list"]>>

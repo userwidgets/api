@@ -100,6 +100,23 @@ export class Users {
 		}
 		return !result ? undefined : User.model(this.context, await this.set(result))
 	}
+	async remove2fa(): Promise<userwidgets.User | undefined> {
+		let result: Awaited<ReturnType<Users["join"]>>
+		const current = await this.get()
+		if (!current)
+			result = undefined
+		else {
+			const user = (({ twoFactor, modified, ...user }) => ({
+				...user,
+				modified:
+					typeof modified == "string"
+						? { other: isoly.DateTime.now(), password: modified }
+						: { ...modified, other: isoly.DateTime.now() },
+			}))(current)
+			result = User.model(this.context, await this.set(user))
+		}
+		return result
+	}
 	async join(invite: userwidgets.User.Invite): Promise<userwidgets.User | undefined> {
 		let result: Awaited<ReturnType<Users["join"]>>
 		const current = await this.get()

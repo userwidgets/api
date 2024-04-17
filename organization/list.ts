@@ -8,7 +8,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	let result: userwidgets.Organization[] | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token")
+		: await context.authenticator.authenticate(request, "token", "admin")
 
 	if (gracely.Error.is(context.applications))
 		result = context.applications
@@ -17,7 +17,9 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (gracely.Error.is(credentials))
 		result = credentials
 	else
-		result = await context.applications.organizations.list(credentials.permissions)
+		result = await context.applications.organizations.list(
+			typeof credentials == "object" ? credentials.permissions : undefined
+		)
 	return result
 }
 

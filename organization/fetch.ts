@@ -8,7 +8,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	let result: userwidgets.Organization | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token")
+		: await context.authenticator.authenticate(request, "token", "admin")
 
 	if (gracely.Error.is(context.applications))
 		result = context.applications
@@ -19,7 +19,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	else if (!request.parameter.id)
 		result = gracely.client.invalidPathArgument("/organization/:id", "id", "string", "id must be specified in the URL.")
 	else
-		result = await context.applications.organizations.fetch(request.parameter.id, credentials.permissions)
+		result = await context.applications.organizations.fetch(
+			request.parameter.id,
+			typeof credentials == "object" ? credentials.permissions : undefined
+		)
 	return result
 }
 

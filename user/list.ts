@@ -8,8 +8,7 @@ export async function list(request: http.Request, context: Context): Promise<htt
 	let result: userwidgets.User[] | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token")
-
+		: await context.authenticator.authenticate(request, "token", "admin")
 	if (gracely.Error.is(context.users))
 		result = context.users
 	else if (!credentials)
@@ -17,7 +16,7 @@ export async function list(request: http.Request, context: Context): Promise<htt
 	else if (gracely.Error.is(credentials))
 		result = credentials
 	else
-		result = await context.users.list(credentials.permissions)
+		result = await context.users.list(typeof credentials == "object" ? credentials.permissions : undefined)
 	return result
 }
 

@@ -9,7 +9,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	let result: userwidgets.User | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token")
+		: await context.authenticator.authenticate(request, "token", "admin")
 	const body: unknown = await request.body
 	const user = userwidgets.User.Changeable.type.get(body)
 	const entityTag = request.header.ifMatch?.at(0)
@@ -29,21 +29,28 @@ export async function update(request: http.Request, context: Context): Promise<h
 		result = gracely.client.unauthorized()
 	else if (
 		user.password &&
-		(credentials.email != request.parameter.email ||
+		(typeof credentials == "string" ||
+			credentials.email != request.parameter.email ||
 			isoly.TimeSpan.toMinutes(isoly.DateTime.span(isoly.DateTime.now(), credentials.issued)) > 5)
 	)
 		result = gracely.client.unauthorized("refresh")
-	else if (user.name && request.parameter.email != credentials.email)
+	else if (user.name && typeof credentials == "object" && request.parameter.email != credentials.email)
 		result = gracely.client.unauthorized("forbidden")
 	else if (
 		user.permissions &&
+		typeof credentials == "object" &&
 		!userwidgets.User.Permissions.organizations(user.permissions).every(id =>
 			userwidgets.User.Permissions.check(credentials.permissions, id, "user.admin")
 		)
 	)
 		result = gracely.client.unauthorized("forbidden")
 	else
-		result = await context.users.update(request.parameter.email, user, entityTag, credentials.permissions)
+		result = await context.users.update(
+			request.parameter.email,
+			user,
+			entityTag,
+			typeof credentials == "object" ? credentials.permissions : undefined
+		)
 	return result
 }
 router.add("PATCH", "/user/:email", update)

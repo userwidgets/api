@@ -8,7 +8,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 	let result: userwidgets.User | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token")
+		: await context.authenticator.authenticate(request, "token", "admin")
 
 	if (gracely.Error.is(context.users))
 		result = context.users
@@ -24,7 +24,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 			"email must be specified in the URL."
 		)
 	else
-		result = await context.users.fetch(request.parameter.email, credentials.permissions)
+		result = await context.users.fetch(
+			request.parameter.email,
+			typeof credentials == "object" ? credentials.permissions : undefined
+		)
 	return result
 }
 

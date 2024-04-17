@@ -3,7 +3,7 @@
     "module": "es2015",
     "target": "es2019",
     "lib": ["es2019", "webworker"],
-    "types": ["@cloudflare/workers-types", "node"],
+    "types": ["@cloudflare/workers-types", "node", "typedly/dist/global.d.ts"],
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
 		"allowJs": true,

@@ -10,12 +10,18 @@ import { User } from "./User"
 
 export class Users {
 	private cache?: User
+	private delete: () => Promise<boolean>
 	private get: () => Promise<User | undefined>
 	private set: (user: User) => Promise<User>
 	private constructor(
 		storage: { object: common.DurableObject<User> },
 		private readonly context: { application: string; secret: string }
 	) {
+		this.delete = async () => {
+			const deleted = await storage.object.delete("data")
+			deleted && (this.cache = undefined)
+			return deleted
+		}
 		this.get = async () => (this.cache ??= await storage.object.get("data"))
 		this.set = async user =>
 			(this.cache = await storage.object.set("data", {
@@ -26,6 +32,12 @@ export class Users {
 				},
 			}))
 	}
+	async remove(): Promise<userwidgets.User | undefined> {
+		const result = await this.fetch()
+		if (result)
+			await this.delete()
+		return result
+	}
 	async create(user: userwidgets.User.Creatable): Promise<userwidgets.User | undefined> {
 		let result: userwidgets.User | undefined
 		if (await this.get())
@@ -35,7 +47,7 @@ export class Users {
 			if (!created)
 				result = undefined
 			else
-				result = User.model(this.context, await this.set(created))
+				result = await this.set(created).then(r => (r ? User.model(this.context, r) : undefined))
 		}
 		return result
 	}
@@ -98,7 +110,7 @@ export class Users {
 		else {
 			result = await User.update(this.context, result, user)
 		}
-		return !result ? undefined : User.model(this.context, await this.set(result))
+		return !result ? undefined : await this.set(result).then(r => (r ? User.model(this.context, r) : undefined))
 	}
 	async remove2fa(): Promise<userwidgets.User | undefined> {
 		let result: Awaited<ReturnType<Users["join"]>>
@@ -113,7 +125,7 @@ export class Users {
 						? { other: isoly.DateTime.now(), password: modified }
 						: { ...modified, other: isoly.DateTime.now() },
 			}))(current)
-			result = User.model(this.context, await this.set(user))
+			result = await this.set(user).then(r => (r ? User.model(this.context, r) : undefined))
 		}
 		return result
 	}
@@ -123,7 +135,9 @@ export class Users {
 		if (!current)
 			result = undefined
 		else
-			result = User.model(this.context, await this.set(await User.update(this.context, current, invite)))
+			result = await this.set(await User.update(this.context, current, invite)).then(r =>
+				r ? User.model(this.context, r) : undefined
+			)
 		return result
 	}
 	static create(state: DurableObjectState, context: Context, environment: Environment): Users | gracely.Error {

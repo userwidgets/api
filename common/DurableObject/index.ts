@@ -4,6 +4,9 @@ export class DurableObject<T> {
 	async get(key: string, options?: DurableObjectGetOptions): Promise<T | undefined> {
 		return this.storage.get<T>(this.prefix + key, options)
 	}
+	async delete(key: string): Promise<boolean> {
+		return this.storage.delete(this.prefix + key)
+	}
 	async set(key: string, value: T): Promise<T> {
 		return await this.storage.put<T>(this.prefix + key, value), value
 	}

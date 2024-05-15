@@ -135,6 +135,35 @@ export class Users {
 			await this.syncOrganizations(result.email, result.permissions)
 		return result
 	}
+	async remove(email: userwidgets.Email, entityTag: string): Promise<userwidgets.User | gracely.Error> {
+		const result: Awaited<ReturnType<Users["remove"]>> = await this.user(email).delete<userwidgets.User>(`user`, {
+			application: this.context.referer,
+			ifMatch: [entityTag],
+			contentType: "application/json;charset=UTF-8",
+		})
+		if (!gracely.Error.is(result)) {
+			const organizations = (
+				await Promise.all(
+					userwidgets.User.Permissions.organizations(result.permissions).map(
+						async id => await this.application().get<userwidgets.Organization>(`organization/${id}`)
+					)
+				)
+			).filter(userwidgets.Organization.is)
+			await Promise.all(
+				organizations.map(
+					async ({ id, users }) =>
+						await this.application().patch<userwidgets.Organization>(
+							`organization/${id}`,
+							{
+								users: users.filter(user => user != email),
+							},
+							{ ifMatch: ["*"], contentType: "application/json;charset=UTF-8" }
+						)
+				)
+			)
+		}
+		return result
+	}
 	async update(
 		email: userwidgets.Email,
 		user: userwidgets.User.Changeable,

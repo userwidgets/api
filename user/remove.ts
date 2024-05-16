@@ -9,7 +9,7 @@ export async function remove(request: http.Request, context: Context): Promise<h
 	let result: userwidgets.User | gracely.Error
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
-		: await context.authenticator.authenticate(request, "token", "admin")
+		: await context.authenticator.authenticate(request, "token")
 	const entityTag = request.header.ifMatch?.at(0)
 	if (!request.parameter.email)
 		result = result = gracely.client.invalidPathArgument("/user/:email", "email", "string", "email missing from path.")
@@ -23,6 +23,8 @@ export async function remove(request: http.Request, context: Context): Promise<h
 		result = credentials
 	else if (!credentials)
 		result = gracely.client.unauthorized()
+	else if (!userwidgets.User.Permissions.check(credentials.permissions, "*", "user.admin"))
+		result = gracely.client.unauthorized("forbidden")
 	else
 		result = await context.users.remove(request.parameter.email, entityTag)
 	return result

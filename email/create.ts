@@ -21,7 +21,7 @@ namespace Email {
 }
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: gracely.Error | Awaited<ReturnType<typeof context.email>>
+	let result: gracely.Result
 	const authorization = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "admin")

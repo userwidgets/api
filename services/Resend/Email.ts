@@ -10,11 +10,6 @@ class ResendEmail extends Email {
 		super(sender)
 	}
 	async send(message: Email.model.Message): Promise<gracely.Result> {
-		const recipients = Email.model.Message.Recipients.BlindCarbonCopy.is(message.recipients)
-			? { to: [], bcc: message.recipients.emails }
-			: Email.model.Message.Recipients.CarbonCopy.is(message.recipients)
-			? { to: [], cc: message.recipients.emails }
-			: { to: message.recipients.emails }
 		const content = {
 			...message.content,
 			attachments: !message.content.attachments
@@ -30,7 +25,9 @@ class ResendEmail extends Email {
 		const result = await this.backend.emails.send({
 			subject: message.subject,
 			from: this.from,
-			...recipients,
+			to: message.to,
+			cc: message.carbonCopy,
+			bcc: message.blindCarbonCopy,
 			...(({ attachments, ...content }) => content)(message.content),
 			attachments: content.attachments,
 		})

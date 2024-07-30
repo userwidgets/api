@@ -38,7 +38,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = email
 	else {
 		result = await email.send({
-			recipients: { emails: body.recipient },
+			to: body.recipient,
 			subject: body.subject,
 			content: { text: body.content },
 		})

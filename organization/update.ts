@@ -87,7 +87,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 						Object.assign(result, {
 							response: await email.send({
 								subject: `You have been invited to join an organization.`,
-								recipients: { emails: [invite.email] },
+								to: invite.email,
 								content: { text: `Invitation: ${inviteUrl}` },
 							}),
 						})

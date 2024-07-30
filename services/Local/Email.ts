@@ -6,7 +6,16 @@ export class LocalEmail extends Email {
 	async send(message: Email.model.Message): Promise<gracely.Result> {
 		const result: gracely.Result = { status: 200 }
 		const subject = message.subject
-		const recipients = Email.model.Message.Recipients.stringify(message.recipients)
+		const recipients =
+			"To: " +
+			(!Array.isArray(message.to) ? message.to : message.to.join(", ")) +
+			(!message.carbonCopy
+				? ""
+				: "\nCC: " + (!Array.isArray(message.carbonCopy) ? message.carbonCopy : message.carbonCopy.join(", "))) +
+			(!message.blindCarbonCopy
+				? ""
+				: "\nBCC: " +
+				  (!Array.isArray(message.blindCarbonCopy) ? message.blindCarbonCopy : message.blindCarbonCopy.join(", ")))
 		const content = typeof message.content == "string" ? message.content : JSON.stringify(message)
 		console.log(`Subject: ${subject}\nFrom: ${this.from}\nTo: ${recipients}\n${content}\n\n`)
 		return result

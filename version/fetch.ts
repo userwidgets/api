@@ -48,7 +48,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 					: "Missing!",
 				adminSecret: context.environment.adminSecret ? "****" : "Missing!",
 				hashSecret: context.environment.hashSecret ? "****" : "Missing!",
-				resendApiKey: context.environment.resendApiKey?.substring(0, 11) ?? "Missing!",
+				resendApiKey: context.environment.resendApiKey?.substring(0, 11).concat("...") ?? "Missing!",
 			}
 			result.dependencies = data.dependencies
 		}

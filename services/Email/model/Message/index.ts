@@ -10,11 +10,12 @@ export type Message = {
 }
 export namespace Message {
 	export import Content = MessageContent
-	export const is = isly.object<Message>({
+	export const type = isly.object<Message>({
 		subject: isly.string(),
 		to: isly.union(isly.string(), isly.array(isly.string())),
 		carbonCopy: isly.union(isly.string(), isly.array(isly.string())).optional(),
 		blindCarbonCopy: isly.union(isly.string(), isly.array(isly.string())).optional(),
 		content: Content.type,
 	})
+	export const is = type.is
 }

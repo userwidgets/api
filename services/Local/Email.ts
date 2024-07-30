@@ -16,8 +16,8 @@ export class LocalEmail extends Email {
 				? ""
 				: "\nBCC: " +
 				  (!Array.isArray(message.blindCarbonCopy) ? message.blindCarbonCopy : message.blindCarbonCopy.join(", ")))
-		const content = typeof message.content == "string" ? message.content : JSON.stringify(message)
-		console.log(`Subject: ${subject}\nFrom: ${this.from}\nTo: ${recipients}\n${content}\n\n`)
+		const content = typeof message.content == "string" ? message.content : JSON.stringify(message.content)
+		console.log(`Subject: ${subject}\nFrom: ${this.from}\n${recipients}\n${content}\n\n`)
 		return result
 	}
 	static async create(_: Context, environment: Context.Environment): Promise<Email | gracely.Error> {

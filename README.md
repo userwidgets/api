@@ -9,13 +9,20 @@ Use [utily/cryptly](https://github.com/utily/cryptly)
 Run `wrangler kv:namespace create store` and update `wrangler.toml` with information from the result.
 
 ## Email
-The application works without email-settings.
-(But emailed links are hard to find...)
-
-### Read more about email specifically for cloudflare workers:
+### Sending emails specifically for cloudflare workers with Mailchannels (deprecated):
 * https://blog.cloudflare.com/sending-email-from-workers-with-mailchannels/
 * https://community.cloudflare.com/t/introducing-mailchannels-domain-lockdown/523913
 * https://api.mailchannels.net/tx/v1/documentation
+* https://community.cloudflare.com/t/mailchannels-end-of-life-notice-migrate-now/658638
+* https://support.mailchannels.com/hc/en-us/articles/26814255454093-End-of-Life-Notice-Cloudflare-Workers
+### Sending emails on cloudflare workers with Resend
+Specify the environment variables (expected values documented in `./Context/Environment.ts`):
+* `email`
+* `emailName`
+* `emailService` 
+* `resendApiKey`
+And follow this guide:
+* https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/
 ### Read more about email DMARC
 * https://en.wikipedia.org/wiki/DMARC
 * https://sv.wikipedia.org/wiki/DomainKeys_Identified_Mail

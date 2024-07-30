@@ -48,9 +48,7 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 					: "Missing!",
 				adminSecret: context.environment.adminSecret ? "****" : "Missing!",
 				hashSecret: context.environment.hashSecret ? "****" : "Missing!",
-				dkimPrivateKey: context.environment.dkimPrivateKey
-					? context.environment.dkimPrivateKey.substring(0, 10) + "..." + context.environment.dkimPrivateKey.slice(-10)
-					: "Missing!",
+				resendApiKey: context.environment.resendApiKey?.substring(0, 11).concat("...") ?? "Missing!",
 			}
 			result.dependencies = data.dependencies
 		}

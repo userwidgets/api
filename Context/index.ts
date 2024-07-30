@@ -1,10 +1,11 @@
-import * as gracely from "gracely"
-import * as http from "cloudly-http"
+import { gracely } from "gracely"
+import { http } from "cloudly-http"
 import { common } from "../common"
 import { router } from "../router"
+import { services } from "../services"
 import { Applications } from "./Applications"
 import { Authenticator } from "./Authenticator"
-import { Environment } from "./Environment"
+import { Environment as ContextEnvironment } from "./Environment"
 import { Inviter } from "./Inviter"
 import { Users } from "./Users"
 
@@ -32,60 +33,16 @@ export class Context {
 	get inviter(): Inviter | gracely.Error {
 		return (this.#inviter ??= Inviter.open(this.environment, this.referer))
 	}
-	constructor(readonly environment: Environment, readonly request: http.Request) {}
-	async email(
-		recipient: string,
-		subject: string,
-		content: string,
-		type = "text/plain",
-		dry_run = false
-	): Promise<http.Response | gracely.Error | gracely.Result> {
-		// docs: https://api.mailchannels.net/tx/v1/documentation
-		let result: http.Response | gracely.Error | gracely.Result
-		if (!this.environment.email)
-			(result = { status: 202 }) && console.log(`to: ${recipient}\n${subject}\n${content}\n\n`)
-		else if (!this.environment.dkimDomain)
-			result = gracely.server.misconfigured("dkimDomain", "dkimDomain missing from configuration.")
-		else if (!this.environment.dkimSelector)
-			result = gracely.server.misconfigured("dkimSelector", "dkimSelector missing from configuration.")
-		else if (!this.environment.dkimPrivateKey)
-			result = gracely.server.misconfigured("dkimPrivateKey", "dkimPrivateKey missing from configuration.")
-		else {
-			const request = http.Request.create({
-				url: `https://api.mailchannels.net/tx/v1/send?${dry_run ? "dry_run=true" : ""}`,
-				method: "POST",
-				header: {
-					contentType: "application/json",
-				},
-				body: {
-					personalizations: [
-						{
-							to: [{ email: recipient }],
-							dkim_domain: this.environment.dkimDomain,
-							dkim_selector: this.environment.dkimSelector,
-							dkim_private_key: this.environment.dkimPrivateKey,
-						},
-					],
-					from: {
-						email: this.environment.email,
-						name: this.environment.emailName,
-					},
-					subject: subject,
-					content: [
-						{
-							type: type,
-							value: content,
-						},
-					],
-				},
-			})
-			const response = await http.fetch(request)
-			result = { ...response, body: await response.body }
-		}
-		return result
+	constructor(readonly environment: Context.Environment, readonly request: http.Request) {}
+	services = {
+		load: {
+			email: async (): Promise<services.Email | gracely.Error> => {
+				return await services.Email.load(this, this.environment)
+			},
+		},
 	}
 
-	static async handle(request: Request, environment: Environment): Promise<Response> {
+	static async handle(request: Request, environment: Context.Environment): Promise<Response> {
 		let result: http.Response
 		try {
 			const httpRequest = http.Request.from(request)
@@ -100,4 +57,7 @@ export class Context {
 			header: { ...result.header, accessControlAllowOrigin: result.header.accessControlAllowOrigin ?? "*" },
 		})
 	}
+}
+export namespace Context {
+	export import Environment = ContextEnvironment
 }

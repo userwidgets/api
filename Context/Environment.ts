@@ -35,17 +35,19 @@ export interface Environment extends Record<string, undefined | string | Durable
 	// See README.md for email-settings.
 	/** The email address users see in the from field in emails. eg: no-reply@example.com */
 	email?: string
-	/** The email name users see in the from field in emails. eg: no-reply@example.com */
-	emailName?: string
-	/**
-	 * RSA private key for dkim
-	 * Set as encrypted value in Cloudflare.
+	/** The email name users see in the from field in emails. eg: Example <no-reply@example.com>.
+	 * Can be any string.
+	 * This is optional.
 	 */
-	dkimPrivateKey?: string
-	/** domain emails originate from */
-	dkimDomain?: string
-	/** dkim selector for mailchannels */
-	dkimSelector?: string
+	emailName?: string
+	/** email service provider. currently supports: "local" and "resend"  */
+	emailService?: string
+	/** API key generated in resend portal: https://resend.com/api-keys
+	 * Required if emailService is resend.
+	 */
+	resendApiKey?: string
+
 	/** Name of the queryparameter for the link with an invite-tag. Default to "invite" */
 	inviteParameterName?: string
 }
+export namespace Environment {}

@@ -21,19 +21,27 @@ namespace Email {
 }
 
 export async function create(request: http.Request, context: Context): Promise<http.Response.Like | any> {
-	let result: gracely.Error | Awaited<ReturnType<typeof context.email>>
+	let result: gracely.Result
 	const authorization = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "admin")
 	const body: Email | unknown = await request.body
+	const email = await context.services.load.email()
+
 	if (gracely.Error.is(authorization))
 		result = authorization
 	else if (authorization != "admin")
 		result = gracely.client.unauthorized()
 	else if (!Email.is(body))
 		result = gracely.client.malformedContent("Email", "Email", "Body is missing either: subject, recipient or content.")
+	else if (gracely.Error.is(email))
+		result = email
 	else {
-		result = await context.email(body.recipient, body.subject, body.content)
+		result = await email.send({
+			to: body.recipient,
+			subject: body.subject,
+			content: { text: body.content },
+		})
 	}
 	return result
 }

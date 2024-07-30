@@ -24,6 +24,7 @@ export async function update(request: http.Request, context: Context): Promise<h
 	const body: unknown = await request.body
 	const organization = userwidgets.Organization.Changeable.type.get(body)
 	const entityTag = request.header.ifMatch?.at(0)
+	const email = await context.services.load.email()
 
 	if (!organization)
 		result = gracely.client.flawedContent(userwidgets.Organization.Changeable.flaw(body))
@@ -34,6 +35,8 @@ export async function update(request: http.Request, context: Context): Promise<h
 			"string",
 			"variable missing from url"
 		)
+	else if (gracely.Error.is(email))
+		result = email
 	else if (!entityTag)
 		result = gracely.client.missingHeader("If-Match", "If-Match header must contain an entity tag.")
 	else if (entityTag != "*" && !isoly.DateTime.is(entityTag))
@@ -82,11 +85,11 @@ export async function update(request: http.Request, context: Context): Promise<h
 							invite.invite
 						)
 						Object.assign(result, {
-							response: await context.email(
-								invite.email,
-								`You have been invited to join an organization.`,
-								`Invitation: ${inviteUrl}`
-							),
+							response: await email.send({
+								subject: `You have been invited to join an organization.`,
+								to: invite.email,
+								content: { text: `Invitation: ${inviteUrl}` },
+							}),
 						})
 					}
 					return result

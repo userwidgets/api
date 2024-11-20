@@ -18,22 +18,23 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = context.users
 	else if (!organization)
 		result = gracely.client.flawedContent(userwidgets.Organization.Creatable.flaw(body))
+	else if (gracely.Error.is(context.inviter))
+		result = context.inviter
 	else if (gracely.Error.is(credentials))
 		result = credentials
 	// TODO make sure permissions are correct for new model with self sign on
 	else if (
-		!credentials ||
-		(credentials != "admin" && userwidgets.User.Permissions.check(credentials.permissions, "*", "org.create"))
+		!organization.user &&
+		(!credentials ||
+			(credentials != "admin" && userwidgets.User.Permissions.check(credentials.permissions, "*", "org.create")))
 	)
 		result = gracely.client.unauthorized(
 			`Not authorized for this action on userwidgets organization. Missing permissions.'`
 		)
-	else if (gracely.Error.is(context.inviter))
-		result = context.inviter
 	else {
 		result = await context.applications.organizations.create(
 			organization,
-			credentials == "admin" ? undefined : credentials.permissions
+			credentials == "admin" || organization.user ? undefined : credentials?.permissions ?? {}
 		)
 	}
 	return result

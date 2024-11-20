@@ -49,15 +49,48 @@ export class Organizations {
 		)
 	}
 	async create(
+		organization: Omit<userwidgets.Organization.Creatable, "user">,
+		permissions?: userwidgets.User.Permissions
+	): Promise<userwidgets.Organization | gracely.Error>
+	async create(
 		organization: userwidgets.Organization.Creatable,
 		permissions?: userwidgets.User.Permissions
-	): Promise<userwidgets.Organization | gracely.Error> {
+	): Promise<Return<Organizations["update"]> | gracely.Error>
+	async create(
+		organization: userwidgets.Organization.Creatable,
+		permissions?: userwidgets.User.Permissions
+	): Promise<userwidgets.Organization | Return<Organizations["update"]> | gracely.Error> {
+		// ): Promise<userwidgets.Organization | gracely.Error | Return<Organizations["update"]>> {
 		// TODO if user is defined on the creatable then fetch the application to see if self sign on is allowed
-		const result = await this.application().post<userwidgets.Organization>(`organization`, organization)
-		// if there was a successful self sign on then also update the org and return the result of the update?
-		return gracely.Error.is(result) || permissions == undefined
-			? result
-			: filters.organization(permissions, result) ?? gracely.client.unauthorized("forbidden")
+		let result: userwidgets.Organization | Return<Organizations["update"]> | gracely.Error
+		if (!organization.user) {
+			result = await this.application().post<userwidgets.Organization>(`organization`, organization)
+			result =
+				gracely.Error.is(result) || permissions == undefined
+					? result
+					: filters.organization(permissions, result) ?? gracely.client.unauthorized("forbidden")
+		} else {
+			const application = await this.context.applications.fetch(permissions)
+			if (gracely.Error.is(application))
+				result = application
+			else if (!application.selfSignOn)
+				result = gracely.client.unauthorized()
+			else {
+				const created = await this.create((({ user, ...organization }) => organization)(organization), permissions)
+				if (gracely.Error.is(created))
+					result = created
+				else {
+					result = await this.update(
+						created.id,
+						{ ...created, users: [...created.users, { user: organization.user, permissions: created.id }] },
+						created.modified,
+						permissions
+					)
+				}
+			}
+		}
+
+		return result
 	}
 	async fetch(
 		id: userwidgets.Organization.Identifier,

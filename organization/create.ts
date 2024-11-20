@@ -20,6 +20,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 		result = gracely.client.flawedContent(userwidgets.Organization.Creatable.flaw(body))
 	else if (gracely.Error.is(credentials))
 		result = credentials
+	// TODO make sure permissions are correct for new model with self sign on
 	else if (
 		!credentials ||
 		(credentials != "admin" && userwidgets.User.Permissions.check(credentials.permissions, "*", "org.create"))

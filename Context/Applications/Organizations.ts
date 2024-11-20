@@ -52,7 +52,9 @@ export class Organizations {
 		organization: userwidgets.Organization.Creatable,
 		permissions?: userwidgets.User.Permissions
 	): Promise<userwidgets.Organization | gracely.Error> {
+		// TODO if user is defined on the creatable then fetch the application to see if self sign on is allowed
 		const result = await this.application().post<userwidgets.Organization>(`organization`, organization)
+		// if there was a successful self sign on then also update the org and return the result of the update?
 		return gracely.Error.is(result) || permissions == undefined
 			? result
 			: filters.organization(permissions, result) ?? gracely.client.unauthorized("forbidden")

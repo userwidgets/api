@@ -29,6 +29,11 @@ export class Applications {
 			result = Application.model(await this.set(Application.from(application)))
 		return result
 	}
+	async update(): Promise<userwidgets.Application | undefined> {
+		let result: userwidgets.Application | undefined
+		// TODO implement
+		return result
+	}
 	static create(state: DurableObjectState): Applications {
 		return new this({ object: new common.DurableObject<Application>(state.storage) })
 	}

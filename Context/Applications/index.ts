@@ -39,6 +39,11 @@ export class Applications {
 			? result
 			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
+	async update(): Promise<userwidgets.Application | gracely.Error> {
+		// TODO implement
+		const result = await this.application().patch<userwidgets.Application>(`application/${id}`)
+		return result // TODO make sure to filter?
+	}
 	static open(context: Context): Applications | gracely.Error {
 		return !context.referer
 			? gracely.client.missingHeader("Referer", "Referer required.")

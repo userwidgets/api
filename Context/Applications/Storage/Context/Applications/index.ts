@@ -29,9 +29,13 @@ export class Applications {
 			result = Application.model(await this.set(Application.from(application)))
 		return result
 	}
-	async update(): Promise<userwidgets.Application | undefined> {
+	async update(application: userwidgets.Application.Changeable): Promise<userwidgets.Application | undefined> {
 		let result: userwidgets.Application | undefined
-		// TODO implement
+		const current = await this.fetch()
+		if (!current)
+			result = undefined
+		else
+			result = await this.change({ ...current, ...application })
 		return result
 	}
 	static create(state: DurableObjectState): Applications {

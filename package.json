@@ -55,7 +55,6 @@
 		"@rollup/plugin-json": "^6.1.0",
 		"@rollup/plugin-node-resolve": "^15.2.3",
 		"@rollup/plugin-terser": "^0.4.4",
-		"rollup-plugin-typescript2": "0.36.0",
 		"@types/jest": "29.5.12",
 		"@typescript-eslint/eslint-plugin": "7.17.0",
 		"@typescript-eslint/parser": "7.17.0",
@@ -68,9 +67,10 @@
 		"rimraf": "6.0.1",
 		"rollup": "^4.24.1",
 		"rollup-plugin-copy": "^3.5.0",
+		"rollup-plugin-typescript2": "0.36.0",
 		"ts-jest": "29.2.3",
 		"tslib": "2.6.3",
-		"typedly": "^0.0.6",
+		"typedly": "^0.0.10",
 		"typescript": "5.5.4",
 		"wrangler": "3.67.1"
 	},
@@ -84,7 +84,7 @@
 		"cryptly": "4.0.5",
 		"flagly": "^0.2.2",
 		"gracely": "^2.0.8",
-		"isly": "^0.1.16",
+		"isly": "^0.1.20",
 		"isoly": "^2.3.11",
 		"resend": "^3.5.0"
 	}

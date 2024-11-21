@@ -39,10 +39,17 @@ export class Applications {
 			? result
 			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
-	async update(): Promise<userwidgets.Application | gracely.Error> {
+	async update(
+		application: userwidgets.Application.Changeable,
+		permissions?: userwidgets.User.Permissions
+	): Promise<userwidgets.Application | gracely.Error> {
 		// TODO implement
-		const result = await this.application().patch<userwidgets.Application>(`application/${id}`)
-		return result // TODO make sure to filter?
+		const result = await this.application().patch<userwidgets.Application>(`application`, application, {
+			contentType: "application/json",
+		})
+		return permissions == undefined || gracely.Error.is(result)
+			? result
+			: filters.application(permissions, result) ?? gracely.client.unauthorized("forbidden")
 	}
 	static open(context: Context): Applications | gracely.Error {
 		return !context.referer

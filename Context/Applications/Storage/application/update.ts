@@ -10,7 +10,12 @@ export async function update(
 ): Promise<userwidgets.Application | gracely.Error> {
 	// TODO implement
 	let result: userwidgets.Application | gracely.Error
-	result = await context.applications.update()
+	const body: unknown = await request.body
+	const application = userwidgets.Application.Changeable.type.get(body)
+	if (!application)
+		result = gracely.client.flawedContent(userwidgets.Application.Changeable.flaw(body))
+	else
+		result = (await context.applications.update(application)) ?? gracely.client.notFound()
 	return result
 }
 

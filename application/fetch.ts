@@ -11,12 +11,10 @@ export async function fetch(request: http.Request, context: Context): Promise<ht
 		: await context.authenticator.authenticate(request, "token", "admin")
 	if (gracely.Error.is(context.applications))
 		result = context.applications
-	else if (!credentials)
-		result = gracely.client.unauthorized()
 	else if (gracely.Error.is(credentials))
 		result = credentials
 	else
-		result = await context.applications.fetch(credentials == "admin" ? undefined : credentials.permissions)
+		result = await context.applications.fetch(credentials == "admin" ? undefined : credentials?.permissions ?? {})
 	return result
 }
 

@@ -19,4 +19,4 @@ export async function update(
 	return result
 }
 
-router.add("PATCH", "/application/:id", update)
+router.add("PATCH", "/application", update)

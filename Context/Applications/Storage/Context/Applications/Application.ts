@@ -17,7 +17,6 @@ export namespace Application {
 		permissions: userwidgets.User.Permissions.type,
 		created: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
 		modified: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
-		selfSignOn: isly.boolean().optional(),
 	})
 	export function model(application: Application): userwidgets.Application {
 		return {

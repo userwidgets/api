@@ -1,4 +1,6 @@
+import { isoly } from "isoly"
 import { userwidgets } from "@userwidgets/model"
+import { typedly } from "typedly"
 // This file is needed to avoid circular dependencies between Applications/index, Applications/Organizations and Users/index
 export namespace filters {
 	export function user(
@@ -35,6 +37,13 @@ export namespace filters {
 		application: userwidgets.Application
 	): userwidgets.Application | undefined {
 		const result: ReturnType<typeof filters.application> = application
+		const member = new Set(userwidgets.User.Permissions.organizations(permissions))
+		if (!typedly.Object.keys(application.organizations).find(organization => member.has(organization))) {
+			const now = isoly.DateTime.now()
+			result.modified = now
+			result.created = now
+			result.permissions = []
+		}
 		if (!userwidgets.User.Permissions.check(permissions, "*", "app.view")) {
 			result.organizations = Object.entries(result.organizations).reduce((result, [id, o]) => {
 				const filtered = id in permissions && organization(permissions, o)

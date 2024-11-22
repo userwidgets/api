@@ -13,6 +13,7 @@ export namespace Application {
 		id: userwidgets.Application.Identifier.type,
 		name: isly.string(),
 		organizations: isly.record(userwidgets.Organization.Identifier.type, Organization.type),
+		selfSignOn: isly.boolean().optional(),
 		permissions: userwidgets.User.Permissions.type,
 		created: isly.fromIs("isoly.DateTime", isoly.DateTime.is),
 		modified: isly.fromIs("isoly.DateTime", isoly.DateTime.is),

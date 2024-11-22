@@ -1,6 +1,7 @@
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { http } from "cloudly-http"
+import { common } from "../common"
 import { Context } from "../Context"
 import { router } from "../router"
 
@@ -11,7 +12,7 @@ export async function create(request: http.Request, context: Context): Promise<h
 	const credentials = gracely.Error.is(context.authenticator)
 		? context.authenticator
 		: await context.authenticator.authenticate(request, "token", "admin")
-
+	const url: URL | undefined = common.url.parse(request.search.url)
 	if (gracely.Error.is(context.applications))
 		result = context.applications
 	else if (gracely.Error.is(context.users))
@@ -34,7 +35,8 @@ export async function create(request: http.Request, context: Context): Promise<h
 	else {
 		result = await context.applications.organizations.create(
 			organization,
-			credentials == "admin" || organization.user ? undefined : credentials?.permissions ?? {}
+			credentials == "admin" || organization.user ? undefined : credentials?.permissions ?? {},
+			{ url }
 		)
 	}
 	return result

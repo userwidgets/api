@@ -10,16 +10,20 @@ export class Applications {
 	readonly organizations: Organizations
 	private constructor(
 		private readonly context: {
-			applicationNamespace: DurableObjectNamespace
 			userNamespace: DurableObjectNamespace
 			referer: string
+			inviter: Inviter
+			services: Context["services"]
 		},
-		inviter: Inviter
+		private readonly environment: {
+			applicationNamespace: DurableObjectNamespace
+			inviteParameterName: string | undefined
+		}
 	) {
-		this.organizations = new Organizations({ ...context, inviter, applications: this })
+		this.organizations = new Organizations({ ...context, applications: this }, this.environment)
 	}
 	private application(): common.DurableObject.Client {
-		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
+		return common.DurableObject.Client.open(this.environment.applicationNamespace, this.context.referer)
 	}
 	async fetch(permissions?: userwidgets.User.Permissions): Promise<userwidgets.Application | gracely.Error> {
 		const result = await this.application().get<userwidgets.Application>(`application`)
@@ -62,11 +66,15 @@ export class Applications {
 			? context.inviter
 			: new this(
 					{
-						applicationNamespace: context.environment.applicationNamespace,
 						userNamespace: context.environment.userNamespace,
 						referer: context.referer,
+						inviter: context.inviter,
+						services: context.services,
 					},
-					context.inviter
+					{
+						applicationNamespace: context.environment.applicationNamespace,
+						inviteParameterName: context.environment.inviteParameterName,
+					}
 			  )
 	}
 }

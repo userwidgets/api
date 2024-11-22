@@ -1,18 +1,24 @@
 import { gracely } from "gracely"
 import { userwidgets } from "@userwidgets/model"
 import { common } from "../../common"
+import { Email } from "../../services/Email"
 import { filters } from "../filters"
+import type { Context } from "../index"
 import { Inviter } from "../Inviter"
 import { Applications } from "./index"
 
 export class Organizations {
 	constructor(
 		private readonly context: {
-			applicationNamespace: DurableObjectNamespace
 			userNamespace: DurableObjectNamespace
 			applications: Applications
 			inviter: Inviter
 			referer: string
+			services: Context["services"]
+		},
+		private readonly environment: {
+			applicationNamespace: DurableObjectNamespace
+			inviteParameterName: string | undefined
 		}
 	) {}
 	private user(email: string): common.DurableObject.Client {
@@ -24,7 +30,7 @@ export class Organizations {
 		})
 	}
 	private application(): common.DurableObject.Client {
-		return common.DurableObject.Client.open(this.context.applicationNamespace, this.context.referer)
+		return common.DurableObject.Client.open(this.environment.applicationNamespace, this.context.referer)
 	}
 	private async removeUsers(id: userwidgets.Organization.Identifier, emails: userwidgets.Email[]): Promise<void> {
 		const users = (await Promise.all(emails.map(async email => await this.fetchUser(email)))).filter(
@@ -50,15 +56,18 @@ export class Organizations {
 	}
 	async create(
 		organization: Omit<userwidgets.Organization.Creatable, "user">,
-		permissions?: userwidgets.User.Permissions
+		permissions?: userwidgets.User.Permissions,
+		options?: { url?: URL }
 	): Promise<userwidgets.Organization | gracely.Error>
 	async create(
 		organization: userwidgets.Organization.Creatable,
-		permissions?: userwidgets.User.Permissions
+		permissions?: userwidgets.User.Permissions,
+		options?: { url?: URL }
 	): Promise<Return<Organizations["update"]> | gracely.Error>
 	async create(
 		organization: userwidgets.Organization.Creatable,
-		permissions?: userwidgets.User.Permissions
+		permissions?: userwidgets.User.Permissions,
+		options?: { url?: URL }
 	): Promise<userwidgets.Organization | Return<Organizations["update"]> | gracely.Error> {
 		// ): Promise<userwidgets.Organization | gracely.Error | Return<Organizations["update"]>> {
 		// TODO if user is defined on the creatable then fetch the application to see if self sign on is allowed
@@ -84,7 +93,8 @@ export class Organizations {
 						created.id,
 						{ ...created, users: [...created.users, { user: organization.user, permissions: created.id }] },
 						created.modified,
-						permissions
+						permissions,
+						options
 					)
 				}
 			}
@@ -114,7 +124,8 @@ export class Organizations {
 		id: userwidgets.Organization.Identifier,
 		organization: userwidgets.Organization.Changeable,
 		entityTag: string,
-		permissions?: userwidgets.User.Permissions
+		permissions?: userwidgets.User.Permissions,
+		options?: { url?: URL }
 	): Promise<
 		| {
 				organization: userwidgets.Organization
@@ -169,6 +180,31 @@ export class Organizations {
 						)
 					).filter((invite): invite is Exclude<typeof invite, undefined> => !!invite)
 					result = { organization: updated, invites: invites, removals: removed.map(user => ({ email: user })) }
+					if (options?.url) {
+						const email = (email =>
+							!gracely.Error.is(email) ? email : { send: (..._: Parameters<Email["send"]>) => email })(
+							await this.context.services.load.email()
+						)
+						const url = options.url
+						result.invites.map(async invite => {
+							const result = { ...invite }
+							const inviteUrl = new URL(url.href)
+							inviteUrl.searchParams.set(
+								userwidgets.Configuration.addDefault(
+									{ inviteParameterName: this.environment.inviteParameterName },
+									"inviteParameterName"
+								).inviteParameterName,
+								invite.invite
+							)
+							Object.assign(result, {
+								response: await email.send({
+									subject: `You have been invited to join an organization.`,
+									to: invite.email,
+									content: { text: `Invitation: ${inviteUrl}` },
+								}),
+							})
+						})
+					}
 				}
 			}
 		}
